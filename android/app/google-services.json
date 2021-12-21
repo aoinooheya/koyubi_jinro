@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "420630967339",
+    "project_id": "koyubijinro",
+    "storage_bucket": "koyubijinro.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:420630967339:android:9ae8229a0f01e431b9e66e",
+        "android_client_info": {
+          "package_name": "com.example.myapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "420630967339-gqvor1noec2mogbb29qa7esfd3hpqmo5.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDCJJZH8yUIJcfhMmQpsVEaHF8iTYOw4HI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "420630967339-gqvor1noec2mogbb29qa7esfd3hpqmo5.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
