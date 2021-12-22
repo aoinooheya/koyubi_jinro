@@ -19,16 +19,16 @@ class _ClockTimerState extends State<ClockTimer>{
   }
 
   @override
-  Widget build(BuildContext context){
-    return Text(_time.toString());
-  }
-
-  @override
   void _onTimer(Timer timer){
     setState(() => {
       if (_time > 0){
         _time--
       }
     });
+  }
+
+  @override
+  Widget build(BuildContext context){
+    return Text(_time.toString());
   }
 }

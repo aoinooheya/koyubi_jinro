@@ -18,75 +18,38 @@ Future<void> main() async {
 
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Koyubi Jinro',
       theme:
       // ThemeData.dark(),
-      ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: const MyHomePage(title: 'こゆび人狼（仮）'),
+      ThemeData(primarySwatch: Colors.blue),
+      home: const MyHomePage(),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({Key? key, required this.title}) : super(key: key);
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-  final String title;
-
+  const MyHomePage({Key? key}) : super(key: key);
   @override
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  // int _counter = 0;
-  // void _incrementCounter() {
-  //   setState(() {
-  //     // This call to setState tells the Flutter framework that something has
-  //     // changed in this State, which causes it to rerun the build method below
-  //     // so that the display can reflect the updated values. If we changed
-  //     // _counter without calling setState(), then the build method would not be
-  //     // called again, and so nothing would appear to happen.
-  //     _counter++;
-  //   });
-  // }
-
   final _audio = AudioCache();
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+        title: const Text('こゆび人狼（仮）'),
       ),
       body: Center(
         child: Column(
-          // Invoke "debug painting" (press "p" in the console, choose the
-          // "Toggle Debug Paint" action from the Flutter Inspector in Android
-          // Studio, or the "Toggle Debug Paint" command in Visual Studio Code)
-          // to see the wireframe for each widget.
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            const Text(
-              'ネット対面人狼アプリ',
-            ),
+            const Text('ネット対面人狼アプリ'),
             Text(
               'こゆび人狼（仮）',
               style: Theme.of(context).textTheme.headline4,
@@ -96,11 +59,11 @@ class _MyHomePageState extends State<MyHomePage> {
               style: Theme.of(context).textTheme.headline5,
             ),
             ElevatedButton(
-                onPressed: (){
-                  _audio.play('sounds/wakoyubi.mp3');
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => NextPage()));
-                },
-                child: const Text('はじめる')
+              onPressed: (){
+                _audio.play('sounds/wakoyubi.mp3');
+                Navigator.push(context, MaterialPageRoute(builder: (context) => NextPage()));
+              },
+              child: const Text('はじめる')
             )
           ],
         ),
@@ -108,3 +71,176 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 }
+
+//////////////////////////////////////////////////////
+// Debug RTCVideoview
+// import 'package:flutter/material.dart';
+// import 'package:flutter_webrtc/flutter_webrtc.dart';
+//
+// void main() => runApp(const MyApp());
+//
+// class MyApp extends StatelessWidget {
+//   const MyApp({Key? key}) : super(key: key);
+//   @override
+//   Widget build(BuildContext context) {
+//     return MaterialApp(
+//       title: 'Debug RTCVideoview',
+//       theme: ThemeData(primarySwatch: Colors.blue),
+//       home: const MyHomePage(),
+//     );
+//   }
+// }
+//
+// class MyHomePage extends StatefulWidget {
+//   const MyHomePage({Key? key}) : super(key: key);
+//   @override
+//   State<MyHomePage> createState() => _MyHomePageState();
+// }
+//
+// class _MyHomePageState extends State<MyHomePage> {
+//   final RTCVideoRenderer _localRenderer = RTCVideoRenderer();
+//
+//   Future<void> openUserMedia(RTCVideoRenderer localVideo) async {
+//     // Obtain access to UserMedia (Video)
+//     var stream = await navigator.mediaDevices.getUserMedia({'video': true});
+//     // Open localVideo
+//     localVideo.srcObject = stream;
+//   }
+//
+//   @override
+//   void initState() {
+//     _localRenderer.initialize();
+//     super.initState();
+//   }
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       body: Column(
+//         children: [
+//           Container(
+//             width: 100, height: 100,
+//             color: Colors.blue.withOpacity(0.5),
+//             child: RTCVideoView(_localRenderer, mirror: true),
+//           ),
+//           Container(
+//             width: 100, height: 100,
+//             color: Colors.orange.withOpacity(0.5),
+//             child: RTCVideoView(_localRenderer, mirror: true),
+//           ),
+//         ],
+//       ),
+//       floatingActionButton: FloatingActionButton(
+//         child: const Icon(Icons.videocam),
+//         onPressed: (){
+//           openUserMedia(_localRenderer);
+//         },
+//       ),
+//     );
+//   }
+// }
+// Debug RTCVideoview End
+
+/////////////////////////////////////////////////////////////
+// Debug IndexedStack
+// import 'package:flutter/material.dart';
+// import 'package:flutter_webrtc/flutter_webrtc.dart';
+//
+// void main() => runApp(const MyApp());
+//
+// class MyApp extends StatelessWidget {
+//   const MyApp({Key? key}) : super(key: key);
+//   @override
+//   Widget build(BuildContext context) {
+//     return MaterialApp(
+//       title: 'Debug IndexedStack',
+//       theme: ThemeData(primarySwatch: Colors.blue),
+//       home: const MyHomePage(),
+//     );
+//   }
+// }
+//
+// class MyHomePage extends StatefulWidget {
+//   const MyHomePage({Key? key}) : super(key: key);
+//   @override
+//   State<MyHomePage> createState() => _MyHomePageState();
+// }
+//
+// class _MyHomePageState extends State<MyHomePage> {
+//   final RTCVideoRenderer _localRenderer = RTCVideoRenderer();
+//   JinroPlayerDebug aoi = JinroPlayerDebug();
+//   // Index for switching icon view (0 is thumbnail, 1 is video)
+//   int _iconIndex = 0;
+//   void _changeIconIndex({required JinroPlayerDebug jinroplayer}){
+//     setState(() {
+//       jinroplayer.iconIndexDebug = 1;
+//     });
+//   }
+//
+//   Future<void> openUserMedia(RTCVideoRenderer localVideo) async {
+//     // Obtain access to UserMedia (Video)
+//     var stream = await navigator.mediaDevices.getUserMedia({'video': true});
+//     // Open localVideo
+//     localVideo.srcObject = stream;
+//   }
+//
+//   @override
+//   void initState() {
+//     _localRenderer.initialize();
+//     // aoi.initialize(view: RTCVideoView(_localRenderer, mirror: true));
+//     super.initState();
+//   }
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       body: Column(
+//         children: [
+//           Container(
+//             width: 100, height: 100,
+//             child: IndexedStack(
+//               index: _iconIndex,
+//               children: [
+//                 Image.asset('assets/images/aoi.jpg'),
+//                 RTCVideoView(_localRenderer, mirror: true),
+//               ],
+//             )
+//           ),
+//           aoi.createIconContainer(view: RTCVideoView(_localRenderer, mirror: true)),
+//           Text(aoi.iconIndexDebug.toString())
+//         ],
+//       ),
+//       floatingActionButton: FloatingActionButton(
+//         child: const Icon(Icons.videocam),
+//         onPressed: (){
+//           openUserMedia(_localRenderer);
+//           setState(() {
+//             _iconIndex = 1; // For first icon
+//             _changeIconIndex(jinroplayer: aoi);
+//           });
+//         },
+//       ),
+//     );
+//   }
+// }
+//
+// class JinroPlayerDebug{
+//   late Container iconDebug;
+//   late RTCVideoView viewDebug;
+//   int iconIndexDebug = 0;
+//
+//   Container createIconContainer({required RTCVideoView view}) {
+//     viewDebug = view;
+//     return Container(
+//         width: 100, height: 100,
+//         child: IndexedStack(
+//           index: iconIndexDebug,
+//           children: [
+//             Image.asset('assets/images/aoi.jpg'),
+//             viewDebug,
+//           ],
+//         )
+//     );
+//   }
+// }
+// Debug IndexedStack End
