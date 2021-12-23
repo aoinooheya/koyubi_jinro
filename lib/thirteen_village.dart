@@ -3,86 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:myapp/timer.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'signaling.dart';
-
-class JinroPlayer {
-  JinroPlayer({         // Constructor
-    required this.playerName,
-    required this.thumbnail,
-    required this.voice
-  });
-  String playerName;    // Player name
-  String thumbnail;     // File path of player thumbnail
-  String voice;         // File path of player voice
-  late RTCVideoView view;   // Own video
-  // Index for switching icon view (0 is thumbnail, 1 is video)
-  int iconIndex = 0;
-  final _audio = AudioCache();
-
-  void setView({required RTCVideoView view}){
-    this.view = view;
-  }
-
-  void changeIconIndex(){ // Increment iconIndex
-    if (iconIndex == 1) {iconIndex = 0;}
-    else {iconIndex++;}
-  }
-
-  Container createIcon(){
-    return Container(
-      width: 100, height: 100, margin: const EdgeInsets.all(5),
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey, width: 2.0),
-        borderRadius: BorderRadius.circular(8.0),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.5),
-            spreadRadius: 5,
-            blurRadius: 7,
-            offset: const Offset(0, 3),
-          )
-        ],
-      ),
-      child: Stack(
-        children: <Widget>[
-          IndexedStack(
-            index: iconIndex,
-            children: <Widget>[
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8.0),
-                child: Image.asset(thumbnail),
-              ),
-              view,
-            ],
-          ),
-          Column(
-            // Print player's name
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: <Widget>[
-              Container(
-                width: double.infinity,
-                color: Colors.black.withOpacity(0.4),
-                child: Text(
-                  playerName,
-                  style: const TextStyle(color: Colors.white),
-                  textAlign: TextAlign.center,
-                ),
-              )
-            ],
-          ),
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(8.0),
-              onTap: (){
-                _audio.play(voice);
-              }
-            ),
-          ),
-        ]
-      ),
-    );
-  }
-}
+import 'jinro_player.dart';
 
 class ThirteenVillage extends StatefulWidget {
   const ThirteenVillage({Key? key}) : super(key: key);
@@ -114,7 +35,8 @@ class _ThirteenVillage extends State<ThirteenVillage> {
   final RTCVideoRenderer _localRenderer = RTCVideoRenderer();
   final RTCVideoRenderer _remoteRenderer = RTCVideoRenderer();
   String? roomId;
-  TextEditingController textEditingController = TextEditingController(text: '');
+  TextEditingController textEditingControllerCreate = TextEditingController(text: '');
+  TextEditingController textEditingControllerJoin = TextEditingController(text: '');
   // WebRTC End
 
   void _changeMicIcon(){
@@ -128,14 +50,15 @@ class _ThirteenVillage extends State<ThirteenVillage> {
   void initState() {
     _localRenderer.initialize();
     _remoteRenderer.initialize();
-    aoi.setView(view: RTCVideoView(_localRenderer, mirror: true));
-    masyu.setView(view: RTCVideoView(_remoteRenderer));
-    sokushichan.setView(view: RTCVideoView(_remoteRenderer));
     signaling.activateUserMedia(_localRenderer, _remoteRenderer);
+    // Set remote stream to onAddRemoteStream??
     signaling.onAddRemoteStream = ((stream) {
       _remoteRenderer.srcObject = stream;
       setState(() {});
     });
+    aoi.setView(view: RTCVideoView(_localRenderer, mirror: true));
+    masyu.setView(view: RTCVideoView(_remoteRenderer));
+    sokushichan.setView(view: RTCVideoView(_remoteRenderer));
 
     super.initState();
   }
@@ -173,9 +96,17 @@ class _ThirteenVillage extends State<ThirteenVillage> {
               children: <Widget>[
                 ElevatedButton(
                   onPressed: () async {
-                    roomId = await signaling.createRoom(_remoteRenderer);
-                    textEditingController.text = roomId!;
-                    setState(() {});
+                    roomId = await signaling.createRoom(
+                      textEditingControllerCreate.text,
+                      _remoteRenderer
+                    );
+                    textEditingControllerCreate.text = roomId!;
+                    // Temporarily switch here.
+                    // Originally wanted to switch
+                    // when the other side video's on/off was changed
+                    setState(() {
+                      masyu.setIconIndex(iconIndex: 1);
+                    });
                   },
                   child: const Text("Create room"),
                 ),
@@ -183,9 +114,15 @@ class _ThirteenVillage extends State<ThirteenVillage> {
                   onPressed: () {
                     // Add roomId
                     signaling.joinRoom(
-                      textEditingController.text,
+                      textEditingControllerJoin.text,
                       _remoteRenderer,
                     );
+                    // Temporarily switch here.
+                    // Originally wanted to switch
+                    // when the other side video's on/off was changed
+                    setState(() {
+                      masyu.setIconIndex(iconIndex: 1);
+                    });
                   },
                   child: const Text("Join room"),
                 ),
@@ -193,10 +130,20 @@ class _ThirteenVillage extends State<ThirteenVillage> {
             ),
             Row(
               children: [
+                const Text("Create the following Room (Optional): "),
+                Flexible(
+                  child: TextFormField(
+                    controller: textEditingControllerCreate,
+                  ),
+                )
+              ],
+            ),
+            Row(
+              children: [
                 const Text("Join the following Room: "),
                 Flexible(
                   child: TextFormField(
-                    controller: textEditingController,
+                    controller: textEditingControllerJoin,
                   ),
                 )
               ],
@@ -213,19 +160,20 @@ class _ThirteenVillage extends State<ThirteenVillage> {
             FloatingActionButton(
               heroTag: "micOff",
               child: const Icon(Icons.mic_off),
+              // Turn on the mic
               onPressed: (){
-                // signaling.openMic(_localRenderer, _remoteRenderer);
+                signaling.localStream?.getAudioTracks()[0].enabled = true;
                 _changeMicIcon();
-                _audio.play('sounds/kaihatsuchu.mp3');
               },
             ),
           if (micOn==true)
             FloatingActionButton(
               heroTag: "micOn",
               child: const Icon(Icons.mic),
+              // Turn off the mic
               onPressed: (){
+                signaling.localStream?.getAudioTracks()[0].enabled = false;
                 _changeMicIcon();
-                _audio.play('sounds/kaihatsuchu.mp3');
               },
             ),
           // Mic End
@@ -235,9 +183,10 @@ class _ThirteenVillage extends State<ThirteenVillage> {
             FloatingActionButton(
               heroTag: "cameraOff",
               child: const Icon(Icons.videocam_off),
+              // Turn on the camera
               onPressed: (){
-                signaling.openUserMedia(_localRenderer, _remoteRenderer);
-                aoi.changeIconIndex();
+                signaling.localStream?.getVideoTracks()[0].enabled = true;
+                aoi.setIconIndex(iconIndex: 1);
                 _changeCameraIcon();
               },
             ),
@@ -245,10 +194,10 @@ class _ThirteenVillage extends State<ThirteenVillage> {
             FloatingActionButton(
               heroTag: "cameraOn",
               child: const Icon(Icons.videocam),
+              // Turn off the camera
               onPressed: (){
-                // signaling.hangUp(_localRenderer);
-                signaling.stopCamera(_localRenderer);
-                aoi.changeIconIndex();
+                signaling.localStream?.getVideoTracks()[0].enabled = false;
+                aoi.setIconIndex(iconIndex: 0);
                 _changeCameraIcon();
               },
             ),
