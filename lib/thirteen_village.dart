@@ -1,4 +1,3 @@
-import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:myapp/timer.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
@@ -14,7 +13,6 @@ class ThirteenVillage extends StatefulWidget {
 class _ThirteenVillage extends State<ThirteenVillage> {
   bool micOn = false;
   bool cameraOn = false;
-  final _audio = AudioCache();
   JinroPlayer aoi = JinroPlayer(
     playerName: '葵',
     thumbnail:  'assets/images/aoi.jpg',
@@ -32,8 +30,6 @@ class _ThirteenVillage extends State<ThirteenVillage> {
   );
   // WebRTC
   Signaling signaling = Signaling();
-  final RTCVideoRenderer _localRenderer = RTCVideoRenderer();
-  final RTCVideoRenderer _remoteRenderer = RTCVideoRenderer();
   String? roomId;
   TextEditingController textEditingControllerCreate = TextEditingController(text: '');
   TextEditingController textEditingControllerJoin = TextEditingController(text: '');
@@ -48,25 +44,22 @@ class _ThirteenVillage extends State<ThirteenVillage> {
 
   @override
   void initState() {
-    _localRenderer.initialize();
-    _remoteRenderer.initialize();
-    signaling.activateUserMedia(_localRenderer, _remoteRenderer);
+    signaling.activateUserMedia(aoi.renderer, masyu.renderer);
     // Set remote stream to onAddRemoteStream??
     signaling.onAddRemoteStream = ((stream) {
-      _remoteRenderer.srcObject = stream;
+      masyu.renderer.srcObject = stream;
       setState(() {});
     });
-    aoi.setView(view: RTCVideoView(_localRenderer, mirror: true));
-    masyu.setView(view: RTCVideoView(_remoteRenderer));
-    sokushichan.setView(view: RTCVideoView(_remoteRenderer));
+    // Mirror the view
+    aoi.setView(view: RTCVideoView(aoi.renderer, mirror: true));
 
     super.initState();
   }
 
   @override
   void dispose() {
-    _localRenderer.dispose();
-    _remoteRenderer.dispose();
+    aoi.renderer.dispose();
+    masyu.renderer.dispose();
     super.dispose();
   } // WebRTC End
 
@@ -98,7 +91,7 @@ class _ThirteenVillage extends State<ThirteenVillage> {
                   onPressed: () async {
                     roomId = await signaling.createRoom(
                       textEditingControllerCreate.text,
-                      _remoteRenderer
+                      masyu.renderer
                     );
                     textEditingControllerCreate.text = roomId!;
                     // Temporarily switch here.
@@ -115,7 +108,7 @@ class _ThirteenVillage extends State<ThirteenVillage> {
                     // Add roomId
                     signaling.joinRoom(
                       textEditingControllerJoin.text,
-                      _remoteRenderer,
+                      masyu.renderer,
                     );
                     // Temporarily switch here.
                     // Originally wanted to switch

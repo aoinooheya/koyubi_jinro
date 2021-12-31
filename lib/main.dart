@@ -1,8 +1,10 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
-import 'package:myapp/next_page.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:myapp/player_setting.dart';
+import 'package:twitter_login/twitter_login.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,10 +41,29 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   final _audio = AudioCache();
-  // Register&Login
+  // Email Registration&Login
   String email = "test@test.com";
   String password = "TESTTEST";
   String infoText = "";
+
+  // Twitter login
+  Future<UserCredential> signInWithTwitter() async {
+    // Create a TwitterLogin instance
+    final twitterLogin = TwitterLogin(
+        apiKey: 'td7SDUJWIAlaABijo0ejc3S12',
+        apiSecretKey:'VqJawqTJkK9GxN4RTP9LLLblToaWaXAf8jXYSDzzf2Di3UZt2v',
+        redirectURI: 'koyubijinro://'
+    );
+    // Trigger the sign-in flow
+    final authResult = await twitterLogin.login();
+    // Create a credential from the access token
+    final twitterAuthCredential = TwitterAuthProvider.credential(
+      accessToken: authResult.authToken!,
+      secret: authResult.authTokenSecret!,
+    );
+    // Once signed in, return the UserCredential
+    return await FirebaseAuth.instance.signInWithCredential(twitterAuthCredential);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -63,12 +84,13 @@ class _MyHomePageState extends State<MyHomePage> {
               '※音量注意',
               style: Theme.of(context).textTheme.headline5,
             ),
+            const SizedBox(height: 8),
             ElevatedButton(
               onPressed: (){
                 _audio.play('sounds/wakoyubi.mp3');
-                Navigator.push(context, MaterialPageRoute(builder: (context) => NextPage()));
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const PlayerSetting()));
               },
-              child: const Text('はじめる')
+              child: const Text('ゲストではじめる')
             ),
             const SizedBox(height: 8),
             // Register by email&password
@@ -91,8 +113,9 @@ class _MyHomePageState extends State<MyHomePage> {
                   });
                 }
               },
-              child: const Text('新規登録')
+              child: const Text('メアドで新規登録')
             ),
+            const SizedBox(height: 8),
             // Login by email&password
             ElevatedButton(
               onPressed: () async {
@@ -112,8 +135,42 @@ class _MyHomePageState extends State<MyHomePage> {
                   });
                 }
               },
-              child: const Text('ログイン')
+              child: const Text('メアドでログイン')
             ),
+            const SizedBox(height: 8),
+            // Google sign in
+            ElevatedButton(
+                onPressed: () async {
+                  try {
+                    // Trigger the authentication flow
+                    final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+                    // Obtain the auth details from the request
+                    final GoogleSignInAuthentication? googleAuth = await googleUser?.authentication;
+                    // Create a new credential
+                    final credential = GoogleAuthProvider.credential(
+                      accessToken: googleAuth?.accessToken,
+                      idToken: googleAuth?.idToken,
+                    );
+                    // Once signed in, return the UserCredential
+                    final result = await FirebaseAuth.instance.signInWithCredential(credential);
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => PlayerSetting(user: result.user)));
+                  } catch (e) {
+                    setState(() {
+                      infoText = "登録に失敗しました：${e.toString()}";
+                    });
+                  }
+                },
+                child: const Text('Googleでログイン')
+            ),
+            const SizedBox(height: 8),
+            // Twitter login
+            ElevatedButton(
+                onPressed: () async {
+                  signInWithTwitter();
+                },
+                child: const Text('Twitterでログイン')
+            ),
+            const SizedBox(height: 8),
             Text(infoText),
           ],
         ),
@@ -121,72 +178,3 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 }
-
-//////////////////////////////////////////////////////
-// Debug RTCVideoview
-// import 'package:flutter/material.dart';
-// import 'package:flutter_webrtc/flutter_webrtc.dart';
-//
-// void main() => runApp(const MyApp());
-//
-// class MyApp extends StatelessWidget {
-//   const MyApp({Key? key}) : super(key: key);
-//   @override
-//   Widget build(BuildContext context) {
-//     return MaterialApp(
-//       title: 'Debug RTCVideoview',
-//       theme: ThemeData(primarySwatch: Colors.blue),
-//       home: const MyHomePage(),
-//     );
-//   }
-// }
-//
-// class MyHomePage extends StatefulWidget {
-//   const MyHomePage({Key? key}) : super(key: key);
-//   @override
-//   State<MyHomePage> createState() => _MyHomePageState();
-// }
-//
-// class _MyHomePageState extends State<MyHomePage> {
-//   final RTCVideoRenderer _localRenderer = RTCVideoRenderer();
-//
-//   Future<void> openUserMedia(RTCVideoRenderer localVideo) async {
-//     // Obtain access to UserMedia (Video)
-//     var stream = await navigator.mediaDevices.getUserMedia({'video': true});
-//     // Open localVideo
-//     localVideo.srcObject = stream;
-//   }
-//
-//   @override
-//   void initState() {
-//     _localRenderer.initialize();
-//     super.initState();
-//   }
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       body: Column(
-//         children: [
-//           Container(
-//             width: 100, height: 100,
-//             color: Colors.blue.withOpacity(0.5),
-//             child: RTCVideoView(_localRenderer, mirror: true),
-//           ),
-//           Container(
-//             width: 100, height: 100,
-//             color: Colors.orange.withOpacity(0.5),
-//             child: RTCVideoView(_localRenderer, mirror: true),
-//           ),
-//         ],
-//       ),
-//       floatingActionButton: FloatingActionButton(
-//         child: const Icon(Icons.videocam),
-//         onPressed: (){
-//           openUserMedia(_localRenderer);
-//         },
-//       ),
-//     );
-//   }
-// }
-// Debug RTCVideoview End

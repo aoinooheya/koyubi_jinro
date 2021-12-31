@@ -4,18 +4,27 @@ import 'package:flutter_webrtc/flutter_webrtc.dart';
 
 class JinroPlayer{
   JinroPlayer({         // Constructor
-    required this.playerName,
-    required this.thumbnail,
-    required this.voice
-  });
+    this.playerName = 'ゲスト',
+    this.thumbnail = 'assets/images/boshuchu.jpg',
+    this.voice = 'sounds/wakoyubi.mp3',
+  }){
+    renderer.initialize();
+    view = RTCVideoView(renderer);
+  }
+
   String playerName;    // Player name
   String thumbnail;     // File path of player thumbnail
   String voice;         // File path of player voice
+  RTCVideoRenderer renderer = RTCVideoRenderer();
   late RTCVideoView view;   // Own video
   // Index for switching icon view (0 is thumbnail, 1 is video)
   int iconIndex = 0;
   final _audio = AudioCache();
 
+  void setName({required String playerName}){
+    this.playerName = playerName;
+  }
+  // Used for mirror the view
   void setView({required RTCVideoView view}){
     this.view = view;
   }
