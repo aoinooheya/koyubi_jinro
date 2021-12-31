@@ -2,6 +2,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:myapp/next_page.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -38,6 +39,10 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   final _audio = AudioCache();
+  // Register&Login
+  String email = "test@test.com";
+  String password = "TESTTEST";
+  String infoText = "";
 
   @override
   Widget build(BuildContext context) {
@@ -64,7 +69,52 @@ class _MyHomePageState extends State<MyHomePage> {
                 Navigator.push(context, MaterialPageRoute(builder: (context) => NextPage()));
               },
               child: const Text('はじめる')
-            )
+            ),
+            const SizedBox(height: 8),
+            // Register by email&password
+            ElevatedButton(
+              onPressed: () async {
+                try {
+                  final FirebaseAuth auth = FirebaseAuth.instance;
+                  await auth.createUserWithEmailAndPassword(
+                    email: email,
+                    password: password
+                  );
+                  // If success
+                  setState(() {
+                    infoText = 'Ragistration Success';
+                  });
+                } catch (e) {
+                  // If not success
+                  setState(() {
+                    infoText = 'Registration Not Success';
+                  });
+                }
+              },
+              child: const Text('新規登録')
+            ),
+            // Login by email&password
+            ElevatedButton(
+              onPressed: () async {
+                try {
+                  final FirebaseAuth auth = FirebaseAuth.instance;
+                  await auth.signInWithEmailAndPassword(
+                    email: email,
+                    password: password
+                  );
+                  // If success
+                  setState(() {
+                    infoText = 'Login Success';
+                  });
+                } catch (e) {
+                  setState(() {
+                    infoText = 'Login Not Success';
+                  });
+                }
+              },
+              child: const Text('ログイン')
+            ),
+            Text(infoText),
           ],
         ),
       ),
@@ -140,107 +190,3 @@ class _MyHomePageState extends State<MyHomePage> {
 //   }
 // }
 // Debug RTCVideoview End
-
-/////////////////////////////////////////////////////////////
-// Debug IndexedStack
-// import 'package:flutter/material.dart';
-// import 'package:flutter_webrtc/flutter_webrtc.dart';
-//
-// void main() => runApp(const MyApp());
-//
-// class MyApp extends StatelessWidget {
-//   const MyApp({Key? key}) : super(key: key);
-//   @override
-//   Widget build(BuildContext context) {
-//     return MaterialApp(
-//       title: 'Debug IndexedStack',
-//       theme: ThemeData(primarySwatch: Colors.blue),
-//       home: const MyHomePage(),
-//     );
-//   }
-// }
-//
-// class MyHomePage extends StatefulWidget {
-//   const MyHomePage({Key? key}) : super(key: key);
-//   @override
-//   State<MyHomePage> createState() => _MyHomePageState();
-// }
-//
-// class _MyHomePageState extends State<MyHomePage> {
-//   final RTCVideoRenderer _localRenderer = RTCVideoRenderer();
-//   JinroPlayerDebug aoi = JinroPlayerDebug();
-//   // Index for switching icon view (0 is thumbnail, 1 is video)
-//   int _iconIndex = 0;
-//   void _changeIconIndex({required JinroPlayerDebug jinroplayer}){
-//     setState(() {
-//       jinroplayer.iconIndexDebug = 1;
-//     });
-//   }
-//
-//   Future<void> openUserMedia(RTCVideoRenderer localVideo) async {
-//     // Obtain access to UserMedia (Video)
-//     var stream = await navigator.mediaDevices.getUserMedia({'video': true});
-//     // Open localVideo
-//     localVideo.srcObject = stream;
-//   }
-//
-//   @override
-//   void initState() {
-//     _localRenderer.initialize();
-//     // aoi.initialize(view: RTCVideoView(_localRenderer, mirror: true));
-//     super.initState();
-//   }
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       body: Column(
-//         children: [
-//           Container(
-//             width: 100, height: 100,
-//             child: IndexedStack(
-//               index: _iconIndex,
-//               children: [
-//                 Image.asset('assets/images/aoi.jpg'),
-//                 RTCVideoView(_localRenderer, mirror: true),
-//               ],
-//             )
-//           ),
-//           aoi.createIconContainer(view: RTCVideoView(_localRenderer, mirror: true)),
-//           Text(aoi.iconIndexDebug.toString())
-//         ],
-//       ),
-//       floatingActionButton: FloatingActionButton(
-//         child: const Icon(Icons.videocam),
-//         onPressed: (){
-//           openUserMedia(_localRenderer);
-//           setState(() {
-//             _iconIndex = 1; // For first icon
-//             _changeIconIndex(jinroplayer: aoi);
-//           });
-//         },
-//       ),
-//     );
-//   }
-// }
-//
-// class JinroPlayerDebug{
-//   late Container iconDebug;
-//   late RTCVideoView viewDebug;
-//   int iconIndexDebug = 0;
-//
-//   Container createIconContainer({required RTCVideoView view}) {
-//     viewDebug = view;
-//     return Container(
-//         width: 100, height: 100,
-//         child: IndexedStack(
-//           index: iconIndexDebug,
-//           children: [
-//             Image.asset('assets/images/aoi.jpg'),
-//             viewDebug,
-//           ],
-//         )
-//     );
-//   }
-// }
-// Debug IndexedStack End
