@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/timer.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
-import 'signaling.dart';
-import 'jinro_player.dart';
+import '../signaling.dart';
+import '../jinro_player.dart';
 
 class ThirteenVillage extends StatefulWidget {
   const ThirteenVillage({Key? key}) : super(key: key);

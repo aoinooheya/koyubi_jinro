@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:myapp/player_setting.dart';
+import 'package:myapp/pages/next_page.dart';
 import 'package:twitter_login/twitter_login.dart';
 
 Future<void> main() async {
@@ -46,6 +46,10 @@ class _MyHomePageState extends State<MyHomePage> {
   String password = "TESTTEST";
   String infoText = "";
 
+  // Firebase Auth
+  FirebaseAuth auth = FirebaseAuth.instance;
+  late UserCredential result;
+
   // Twitter login
   Future<UserCredential> signInWithTwitter() async {
     // Create a TwitterLogin instance
@@ -62,7 +66,7 @@ class _MyHomePageState extends State<MyHomePage> {
       secret: authResult.authTokenSecret!,
     );
     // Once signed in, return the UserCredential
-    return await FirebaseAuth.instance.signInWithCredential(twitterAuthCredential);
+    return await auth.signInWithCredential(twitterAuthCredential);
   }
 
   @override
@@ -86,9 +90,10 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
             const SizedBox(height: 8),
             ElevatedButton(
-              onPressed: (){
+              onPressed: () async {
                 _audio.play('sounds/wakoyubi.mp3');
-                Navigator.push(context, MaterialPageRoute(builder: (context) => const PlayerSetting()));
+                result = await auth.signInAnonymously();
+                Navigator.push(context, MaterialPageRoute(builder: (context) => NextPage(user: result.user!)));
               },
               child: const Text('ゲストではじめる')
             ),
@@ -97,7 +102,6 @@ class _MyHomePageState extends State<MyHomePage> {
             ElevatedButton(
               onPressed: () async {
                 try {
-                  final FirebaseAuth auth = FirebaseAuth.instance;
                   await auth.createUserWithEmailAndPassword(
                     email: email,
                     password: password
@@ -120,7 +124,6 @@ class _MyHomePageState extends State<MyHomePage> {
             ElevatedButton(
               onPressed: () async {
                 try {
-                  final FirebaseAuth auth = FirebaseAuth.instance;
                   await auth.signInWithEmailAndPassword(
                     email: email,
                     password: password
@@ -152,8 +155,8 @@ class _MyHomePageState extends State<MyHomePage> {
                       idToken: googleAuth?.idToken,
                     );
                     // Once signed in, return the UserCredential
-                    final result = await FirebaseAuth.instance.signInWithCredential(credential);
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => PlayerSetting(user: result.user)));
+                    result = await auth.signInWithCredential(credential);
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => NextPage(user: result.user!)));
                   } catch (e) {
                     setState(() {
                       infoText = "登録に失敗しました：${e.toString()}";

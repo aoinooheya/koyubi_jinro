@@ -1,23 +1,29 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
-import 'package:myapp/next_page.dart';
-import 'jinro_player.dart';
+import '../jinro_player.dart';
 
 class PlayerSetting extends StatefulWidget{
-  const PlayerSetting({Key? key, this.user}) : super(key: key);
-  final User? user;
+  const PlayerSetting({Key? key, required this.user}) : super(key: key);
+  final User user;
   @override
   _PlayerSetting createState() => _PlayerSetting();
 }
 
 class _PlayerSetting extends State<PlayerSetting> {
   JinroPlayer guest = JinroPlayer();
-  TextEditingController textEditingControllerName = TextEditingController(text: '');
+  TextEditingController nameField = TextEditingController(text: '');
+
+  @override
+  void initState(){
+    guest.setView(view: RTCVideoView(guest.renderer, mirror: true));
+    guest.setName(playerName: widget.user.displayName);
+    guest.setThumbnail(thumbnail: widget.user.photoURL);
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context){
-    guest.setView(view: RTCVideoView(guest.renderer, mirror: true));
     return Scaffold(
       appBar: AppBar(
         title: const Text('プレイヤー設定＾ー＾'),
@@ -31,7 +37,7 @@ class _PlayerSetting extends State<PlayerSetting> {
             SizedBox(
               width: 130,
               child: TextFormField(
-                controller: textEditingControllerName,
+                controller: nameField,
                 decoration: const InputDecoration(
                   hintText: '名前を入力してね',
                 ),
@@ -43,7 +49,7 @@ class _PlayerSetting extends State<PlayerSetting> {
               child: ElevatedButton(
                   onPressed: (){
                     setState(() {
-                      guest.setName(playerName: textEditingControllerName.text);
+                      guest.setName(playerName: nameField.text);
                     });
                   },
                   child: const Text('名前変更')),
@@ -53,10 +59,7 @@ class _PlayerSetting extends State<PlayerSetting> {
               width: 100,
               child: ElevatedButton(
                 onPressed: (){
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => NextPage())
-                  );
+                  Navigator.pop(context);
                 },
                 child: const Text('決定')),
             ),

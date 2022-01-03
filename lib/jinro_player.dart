@@ -21,8 +21,11 @@ class JinroPlayer{
   int iconIndex = 0;
   final _audio = AudioCache();
 
-  void setName({required String playerName}){
-    this.playerName = playerName;
+  void setName({required String? playerName}){
+    if (playerName != null) {this.playerName = playerName;}
+  }
+  void setThumbnail({required String? thumbnail}){
+    if (thumbnail != null) {this.thumbnail = thumbnail;}
   }
   // Used for mirror the view
   void setView({required RTCVideoView view}){
@@ -55,7 +58,7 @@ class JinroPlayer{
               children: <Widget>[
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8.0),
-                  child: Image.asset(thumbnail),
+                  child: Image.network(thumbnail),
                 ),
                 view,
               ],
