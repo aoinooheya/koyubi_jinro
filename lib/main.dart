@@ -2,7 +2,10 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:myapp/jinro_player.dart';
 import 'package:myapp/pages/next_page.dart';
 import 'package:twitter_login/twitter_login.dart';
 
@@ -16,7 +19,7 @@ Future<void> main() async {
         projectId: "koyubijinro"
     )
   );
-  runApp(const MyApp());
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 class MyApp extends StatelessWidget {
@@ -28,27 +31,18 @@ class MyApp extends StatelessWidget {
       theme:
       // ThemeData.dark(),
       ThemeData(primarySwatch: Colors.blue),
-      home: const MyHomePage(),
+      home: MyHomePage(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({Key? key}) : super(key: key);
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
+class MyHomePage extends HookConsumerWidget {
+  MyHomePage({Key? key}) : super(key: key);
   final _audio = AudioCache();
   // Email Registration&Login
-  String email = "test@test.com";
-  String password = "TESTTEST";
-  String infoText = "";
-
-  // Firebase Auth
-  FirebaseAuth auth = FirebaseAuth.instance;
-  late UserCredential result;
+  final String email = "test@test.com";
+  final String password = "TESTTEST";
+  final String infoText = "";
 
   // Twitter login
   Future<UserCredential> signInWithTwitter() async {
@@ -66,16 +60,43 @@ class _MyHomePageState extends State<MyHomePage> {
       secret: authResult.authTokenSecret!,
     );
     // Once signed in, return the UserCredential
-    return await auth.signInWithCredential(twitterAuthCredential);
+    return await FirebaseAuth.instance.signInWithCredential(twitterAuthCredential);
+  }
+
+  Future<void> createIconByLoginWithMediaAccess(
+    JinroPlayerState jinroPlayer,
+    JinroPlayerNotifier jinroPlayerNotifier
+  ) async {
+    // Couldn't use initialize() because the view wasn't displayed properly.
+    // Undesirable when switching the player's account.
+    // jinroPlayerNotifier.initialize();
+
+    // Obtain access to UserMedia (Video & Audio)
+    var stream = await navigator.mediaDevices
+        .getUserMedia({'video': true, 'audio': true});
+    // Initially localStream is disabled
+    stream.getAudioTracks()[0].enabled = false;
+    stream.getVideoTracks()[0].enabled = false;
+
+    jinroPlayerNotifier.copyWith(
+      playerName: FirebaseAuth.instance.currentUser!.displayName,
+      thumbnail: FirebaseAuth.instance.currentUser!.photoURL,
+      localStream: stream,
+      view: RTCVideoView(jinroPlayer.renderer, mirror: true),
+    );
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final jinroPlayer = ref.read(jinroPlayerProvider);
+    final jinroPlayerNotifier = ref.read(jinroPlayerProvider.notifier);
     return Scaffold(
       appBar: AppBar(
         title: const Text('こゆび人狼（仮）'),
       ),
-      body: Center(
+      body:
+      // const TodoWidget(),
+      Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
@@ -89,11 +110,13 @@ class _MyHomePageState extends State<MyHomePage> {
               style: Theme.of(context).textTheme.headline5,
             ),
             const SizedBox(height: 8),
+            // Sign in anonymously
             ElevatedButton(
               onPressed: () async {
                 _audio.play('sounds/wakoyubi.mp3');
-                result = await auth.signInAnonymously();
-                Navigator.push(context, MaterialPageRoute(builder: (context) => NextPage(user: result.user!)));
+                await FirebaseAuth.instance.signInAnonymously();
+                createIconByLoginWithMediaAccess(jinroPlayer, jinroPlayerNotifier);
+                Navigator.push(context, MaterialPageRoute(builder: (context) => NextPage()));
               },
               child: const Text('ゲストではじめる')
             ),
@@ -102,19 +125,19 @@ class _MyHomePageState extends State<MyHomePage> {
             ElevatedButton(
               onPressed: () async {
                 try {
-                  await auth.createUserWithEmailAndPassword(
+                  await FirebaseAuth.instance.createUserWithEmailAndPassword(
                     email: email,
                     password: password
                   );
                   // If success
-                  setState(() {
-                    infoText = 'Ragistration Success';
-                  });
+                  // setState(() {
+                  //   infoText = 'Ragistration Success';
+                  // });
                 } catch (e) {
                   // If not success
-                  setState(() {
-                    infoText = 'Registration Not Success';
-                  });
+                  // setState(() {
+                  //   infoText = 'Registration Not Success';
+                  // });
                 }
               },
               child: const Text('メアドで新規登録')
@@ -124,18 +147,18 @@ class _MyHomePageState extends State<MyHomePage> {
             ElevatedButton(
               onPressed: () async {
                 try {
-                  await auth.signInWithEmailAndPassword(
+                  await FirebaseAuth.instance.signInWithEmailAndPassword(
                     email: email,
                     password: password
                   );
                   // If success
-                  setState(() {
-                    infoText = 'Login Success';
-                  });
+                  // setState(() {
+                  //   infoText = 'Login Success';
+                  // });
                 } catch (e) {
-                  setState(() {
-                    infoText = 'Login Not Success';
-                  });
+                  // setState(() {
+                  //   infoText = 'Login Not Success';
+                  // });
                 }
               },
               child: const Text('メアドでログイン')
@@ -155,12 +178,13 @@ class _MyHomePageState extends State<MyHomePage> {
                       idToken: googleAuth?.idToken,
                     );
                     // Once signed in, return the UserCredential
-                    result = await auth.signInWithCredential(credential);
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => NextPage(user: result.user!)));
+                    await FirebaseAuth.instance.signInWithCredential(credential);
+                    createIconByLoginWithMediaAccess(jinroPlayer, jinroPlayerNotifier);
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => NextPage()));
                   } catch (e) {
-                    setState(() {
-                      infoText = "登録に失敗しました：${e.toString()}";
-                    });
+                    // setState(() {
+                    //   infoText = "登録に失敗しました：${e.toString()}";
+                    // });
                   }
                 },
                 child: const Text('Googleでログイン')
@@ -181,3 +205,87 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 }
+
+////////////////////////////////////////////////////
+// final playerProvider = StateNotifierProvider<PlayerStateNotifier, PlayerState>((ref) => PlayerStateNotifier());
+//
+// class PlayerStateNotifier extends StateNotifier<PlayerState>{
+//   PlayerStateNotifier(): super(PlayerState());
+//
+//   // void initialize(){
+//   //   state = PlayerState();
+//   // }
+//
+//   void copyWith({
+//     MediaStream? localStream,
+//     RTCVideoRenderer? renderer,
+//     RTCVideoView? view,
+//   }){
+//     localStream ??= state.localStream;
+//     renderer ??= state.renderer;
+//     view ??= state.view;  // Used for mirror the view
+//     state = PlayerState(
+//       localStream: localStream,
+//       renderer: renderer,
+//       view: view,
+//     );
+//   }
+// }
+//
+// class PlayerState {
+//   PlayerState({
+//     this.localStream,
+//     RTCVideoRenderer? renderer,
+//     RTCVideoView? view,
+//   }){
+//     print('localStream = $localStream');
+//     renderer == null ? this.renderer.initialize() : this.renderer = renderer;
+//     this.renderer.srcObject = localStream;
+//     print('renderer.srcObject = ${renderer?.srcObject}');
+//     view == null ? this.view = RTCVideoView(this.renderer) : this.view = view;
+//     print('view = $view');
+//
+//     icon = Container(
+//         width: 100, height: 100,
+//         decoration: BoxDecoration(
+//           border: Border.all(color: Colors.grey, width: 2.0),
+//         ),
+//         child: this.view,
+//       );
+//   }
+//
+//   MediaStream? localStream;
+//   RTCVideoRenderer renderer = RTCVideoRenderer();
+//   late RTCVideoView view;
+//
+//   late Container icon;
+// }
+//
+// class View extends HookConsumerWidget{
+//   const View({Key? key}) : super(key: key);
+//
+//   Future<void> mediaAccess(
+//     PlayerState player,
+//     PlayerStateNotifier playerNotifier
+//   ) async {
+//     // playerNotifier.initialize();
+//     var stream = await navigator.mediaDevices.getUserMedia({'video': true, 'audio': true});
+//     print('stream = $stream');
+//     playerNotifier.copyWith(
+//       localStream: stream,
+//       view: RTCVideoView(player.renderer, mirror: true)
+//     );
+//   }
+//
+//   @override
+//   Widget build(BuildContext context, WidgetRef ref) {
+//     final player = ref.watch(playerProvider);
+//     final playerNotifier = ref.watch(playerProvider.notifier);
+//     return ElevatedButton(
+//       onPressed: () async {
+//         mediaAccess(player, playerNotifier);
+//       },
+//       child: player.icon
+//     );
+//   }
+// }
