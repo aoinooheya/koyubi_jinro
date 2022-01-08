@@ -18,13 +18,14 @@ class Signaling {
 
   RTCPeerConnection? peerConnection;
 
-  MediaStream? localStream;
+  // MediaStream? localStream;
   MediaStream? remoteStream;
   String? roomId;
-  String? currentRoomText;
   StreamStateCallback? onAddRemoteStream;
 
-  Future<String> createRoom(String roomIdDefined, RTCVideoRenderer remoteRenderer) async {
+  Future<String> createRoom(
+    String roomIdDefined, MediaStream localStream, RTCVideoRenderer remoteRenderer
+  ) async {
     FirebaseFirestore db = FirebaseFirestore.instance;
     DocumentReference roomRef;
 
@@ -35,20 +36,20 @@ class Signaling {
       roomRef = db.collection('rooms').doc(roomIdDefined);
     }
 
-    print('Create PeerConnection with configuration: $configuration');
+    // print('Create PeerConnection with configuration: $configuration');
     peerConnection = await createPeerConnection(configuration);
 
     registerPeerConnectionListeners();
 
-    localStream?.getTracks().forEach((track) {
-      peerConnection?.addTrack(track, localStream!);
+    localStream.getTracks().forEach((track) {
+      peerConnection?.addTrack(track, localStream);
     });
 
     // Code for collecting ICE candidates below
     var callerCandidatesCollection = roomRef.collection('callerCandidates');
 
     peerConnection?.onIceCandidate = (RTCIceCandidate candidate) {
-      print('Got candidate: ${candidate.toMap()}');
+      // print('Got candidate: ${candidate.toMap()}');
       // Add ICE candidates to Firebase
       callerCandidatesCollection.add(candidate.toMap());
     };
@@ -57,28 +58,17 @@ class Signaling {
     // Create SDP
     RTCSessionDescription offer = await peerConnection!.createOffer();
     await peerConnection!.setLocalDescription(offer);
-    print('Created offer: $offer');
+    // print('Created offer: $offer');
 
     // Create a room
     Map<String, dynamic> roomWithOffer = {'offer': offer.toMap()};
     await roomRef.set(roomWithOffer);
     var roomId = roomRef.id;
     print('New room created with SDK offer. Room ID: $roomId');
-    currentRoomText = 'Current room is $roomId - You are the caller!';
-    // Created a Room
 
-    peerConnection?.onTrack = (RTCTrackEvent event) {
-      print('Got remote track: ${event.streams[0]}');
-
-      event.streams[0].getTracks().forEach((track) {
-        print('Add a track to the remoteStream $track');
-        remoteStream?.addTrack(track);
-      });
-    };
-
-    // Listening for remote session description below
+    // Listening for remote session description (SDP)
     roomRef.snapshots().listen((snapshot) async {
-      print('Got updated room: ${snapshot.data()}');
+      // print('Got updated room: ${snapshot.data()}');
       Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
       if (peerConnection?.getRemoteDescription() != null &&
           data['answer'] != null) {
@@ -86,20 +76,30 @@ class Signaling {
           data['answer']['sdp'],
           data['answer']['type'],
         );
-
         print("Someone tried to connect");
         // Set remote SDP to peerConnection
         await peerConnection?.setRemoteDescription(answer);
       }
     });
-    // Listening for remote session description above
+
+    // => peerConnection?.onAddStream ("Add remote stream")
+    // => onAddRemoteStream ('masyu = onAddRemoteStream')
+
+    peerConnection?.onTrack = (RTCTrackEvent event) {
+      print('Got remote track: ${event.streams[0]}');
+
+      event.streams[0].getTracks().forEach((track) {
+        // print('Add a track to the remoteStream $track');
+        remoteStream?.addTrack(track);
+      });
+    };
 
     // Listen for remote Ice candidates below
     roomRef.collection('calleeCandidates').snapshots().listen((snapshot) {
       snapshot.docChanges.forEach((change) {
         if (change.type == DocumentChangeType.added) {
           Map<String, dynamic> data = change.doc.data() as Map<String, dynamic>;
-          print('Got new remote ICE candidate: ${jsonEncode(data)}');
+          // print('Got new remote ICE candidate: ${jsonEncode(data)}');
           // Add remote ICE candidate to peerConnection
           peerConnection!.addCandidate(
             RTCIceCandidate(
@@ -116,7 +116,9 @@ class Signaling {
     return roomId;
   }
 
-  Future<void> joinRoom(String roomId, RTCVideoRenderer remoteVideo) async {
+  Future<void> joinRoom(
+    String roomId, MediaStream localStream, RTCVideoRenderer remoteVideo
+  ) async {
     // Get room
     FirebaseFirestore db = FirebaseFirestore.instance;
     DocumentReference roomRef = db.collection('rooms').doc('$roomId');
@@ -131,8 +133,8 @@ class Signaling {
       registerPeerConnectionListeners();
 
       // Sending my stream to the other person (Google server?)
-      localStream?.getTracks().forEach((track) {
-        peerConnection?.addTrack(track, localStream!);
+      localStream.getTracks().forEach((track) {
+        peerConnection?.addTrack(track, localStream);
       });
 
       // Code for collecting ICE candidates below
@@ -142,29 +144,29 @@ class Signaling {
           print('onIceCandidate: complete!');
           return;
         }
-        print('onIceCandidate: ${candidate.toMap()}');
+        // print('onIceCandidate: ${candidate.toMap()}');
         calleeCandidatesCollection.add(candidate.toMap());
       };
       // Code for collecting ICE candidate above
 
       // Receiving the other person's stream?
       peerConnection?.onTrack = (RTCTrackEvent event) {
-        print('Got remote track: ${event.streams[0]}');
+        // print('Got remote track: ${event.streams[0]}');
         event.streams[0].getTracks().forEach((track) {
-          print('Add a track to the remoteStream: $track');
+          // print('Add a track to the remoteStream: $track');
           remoteStream?.addTrack(track);
         });
       };
 
       // Code for creating SDP answer below
       var data = roomSnapshot.data() as Map<String, dynamic>;
-      print('Got offer $data');
+      // print('Got offer $data');
       var offer = data['offer'];
       await peerConnection?.setRemoteDescription(
         RTCSessionDescription(offer['sdp'], offer['type']),
       );
       var answer = await peerConnection!.createAnswer();
-      print('Created Answer $answer');
+      // print('Created Answer $answer');
 
       await peerConnection!.setLocalDescription(answer);
 
@@ -179,8 +181,8 @@ class Signaling {
       roomRef.collection('callerCandidates').snapshots().listen((snapshot) {
         snapshot.docChanges.forEach((document) {
           var data = document.doc.data() as Map<String, dynamic>;
-          print(data);
-          print('Got new remote ICE candidate: $data');
+          // print(data);
+          // print('Got new remote ICE candidate: $data');
           peerConnection!.addCandidate(
             RTCIceCandidate(
               data['candidate'],
@@ -193,19 +195,9 @@ class Signaling {
     }
   }
 
-  Future<void> activateUserMedia(
-    RTCVideoRenderer localVideo,
+  Future<void> initializeRemoteStream(
     RTCVideoRenderer remoteVideo,
   ) async {
-    // Obtain access to UserMedia (Video & Audio)
-    var stream = await navigator.mediaDevices
-        .getUserMedia({'video': true, 'audio': true});
-
-    // Initialize localStream
-    localStream = stream;
-    localVideo.srcObject = localStream;
-    localStream?.getAudioTracks()[0].enabled = false;
-    localStream?.getVideoTracks()[0].enabled = false;
     // Initialize remoteVideo by temporary stream (not actual remote stream)
     remoteVideo.srcObject = await createLocalMediaStream('key');
   }
@@ -234,25 +226,25 @@ class Signaling {
       await roomRef.delete();
     }
 
-    localStream!.dispose();
+    // localStream!.dispose();
     remoteStream?.dispose();
   }
 
   void registerPeerConnectionListeners() {
     peerConnection?.onIceGatheringState = (RTCIceGatheringState state) {
-      print('ICE gathering state changed: $state');
+      // print('ICE gathering state changed: $state');
     };
 
     peerConnection?.onConnectionState = (RTCPeerConnectionState state) {
-      print('Connection state change: $state');
+      // print('Connection state change: $state');
     };
 
     peerConnection?.onSignalingState = (RTCSignalingState state) {
-      print('Signaling state change: $state');
+      // print('Signaling state change: $state');
     };
 
     peerConnection?.onIceGatheringState = (RTCIceGatheringState state) {
-      print('ICE connection state change: $state');
+      // print('ICE connection state change: $state');
     };
 
     // When peerConnection receives new stream

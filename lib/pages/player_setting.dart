@@ -20,7 +20,7 @@ class PlayerSetting extends HookConsumerWidget{
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            jinroPlayer.playerIcon,
+            jinroPlayer[0].playerIcon,
             // Set player's name
             SizedBox(
               width: 130,
@@ -36,7 +36,9 @@ class PlayerSetting extends HookConsumerWidget{
               width: 100,
               child: ElevatedButton(
                 onPressed: (){
-                  jinroPlayerNotifier.copyWith(playerName: nameField.text);
+                  jinroPlayerNotifier.copyWith(
+                    jinroPlayerState: jinroPlayer[0], playerName: nameField.text
+                  );
                 },
                 child: const Text('名前変更')),
             ),

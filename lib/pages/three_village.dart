@@ -10,27 +10,10 @@ class ThreeVillage extends HookConsumerWidget {
   ThreeVillage({Key? key}) : super(key: key);
 
   final bool micOn = false;
-  final JinroPlayerState aoi = JinroPlayerState(
-    playerName: '葵',
-    thumbnail:  'assets/images/aoi.jpg',
-    voice:      'sounds/hiiteiku.mp3'
-  );
-  final JinroPlayerState masyu = JinroPlayerState(
-    playerName: 'masyu',
-    thumbnail:  'assets/images/masyu.jpg',
-    voice:      'sounds/shake.mp3',
-  );
-  final JinroPlayerState sokushichan = JinroPlayerState(
-    playerName: '即死ちゃん',
-    thumbnail:  'assets/images/sokushichan.jpg',
-    voice:      'sounds/onegaishimasusokushichan.mp3',
-  );
-  // WebRTC
   final Signaling signaling = Signaling();
   late final String? roomId;
   final TextEditingController textEditingControllerCreate = TextEditingController(text: '');
   final TextEditingController textEditingControllerJoin = TextEditingController(text: '');
-  // WebRTC End
 
   void _changeMicIcon(){
     // setState(() {micOn = !micOn;});
@@ -41,11 +24,15 @@ class ThreeVillage extends HookConsumerWidget {
     final jinroPlayer = ref.watch(jinroPlayerProvider);
     final jinroPlayerNotifier = ref.watch(jinroPlayerProvider.notifier);
     useEffect((){
-      signaling.activateUserMedia(jinroPlayer.renderer, masyu.renderer);
-      // Set remote stream to onAddRemoteStream??
+      signaling.initializeRemoteStream(jinroPlayer[1].renderer);
+
+      // When we get remote stream, set to masyu??
       signaling.onAddRemoteStream = ((stream) {
-        masyu.renderer.srcObject = stream;
-        // setState(() {});
+        jinroPlayerNotifier.copyWith(
+          jinroPlayerState: jinroPlayer[1], stream: stream, iconIndex: iconView.video.index,
+        );
+        print('masyu = onAddRemoteStream');
+        print('masyu.renderer.srcObject = ${jinroPlayer[1].renderer.srcObject}');
       });
       return null;
     }, const []);
@@ -64,10 +51,9 @@ class ThreeVillage extends HookConsumerWidget {
           children: [
             Wrap(
               children: <Widget>[
-                jinroPlayer.playerIcon,
-                aoi.playerIcon,
-                masyu.playerIcon,
-                sokushichan.playerIcon,
+                // Display player icons
+                for (final jinroPlayer in jinroPlayer)
+                  jinroPlayer.playerIcon,
               ]
             ),
             Wrap(
@@ -76,15 +62,10 @@ class ThreeVillage extends HookConsumerWidget {
                   onPressed: () async {
                     roomId = await signaling.createRoom(
                       textEditingControllerCreate.text,
-                      masyu.renderer
+                      jinroPlayer[0].stream!,
+                      jinroPlayer[1].renderer
                     );
                     textEditingControllerCreate.text = roomId!;
-                    // Temporarily switch here.
-                    // Originally wanted to switch
-                    // when the other side video's on/off was changed
-                    // setState(() {
-                    //   masyu.iconIndex = 1;
-                    // });
                   },
                   child: const Text("Create room"),
                 ),
@@ -93,14 +74,13 @@ class ThreeVillage extends HookConsumerWidget {
                     // Add roomId
                     signaling.joinRoom(
                       textEditingControllerJoin.text,
-                      masyu.renderer,
+                      jinroPlayer[0].stream!,
+                      jinroPlayer[1].renderer,
                     );
                     // Temporarily switch here.
                     // Originally wanted to switch
                     // when the other side video's on/off was changed
-                    // setState(() {
-                    //   masyu.iconIndex = 1;
-                    // });
+                    jinroPlayerNotifier.copyWith(jinroPlayerState: jinroPlayer[1], iconIndex: 1);
                   },
                   child: const Text("Join room"),
                 ),
@@ -134,39 +114,76 @@ class ThreeVillage extends HookConsumerWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           // Mic
-          if (micOn==false)
-            FloatingActionButton(
-              heroTag: "micOff",
-              child: const Icon(Icons.mic_off),
-              // Turn on the mic
-              onPressed: (){
-                signaling.localStream?.getAudioTracks()[0].enabled = true;
-                _changeMicIcon();
-              },
-            ),
-          if (micOn==true)
-            FloatingActionButton(
-              heroTag: "micOn",
-              child: const Icon(Icons.mic),
-              // Turn off the mic
-              onPressed: (){
-                signaling.localStream?.getAudioTracks()[0].enabled = false;
-                _changeMicIcon();
-              },
-            ),
-          // Mic End
-          const SizedBox(height: 5),
-          // Camera
           FloatingActionButton(
-            child: Icon(jinroPlayer.iconIndex == 0 ? Icons.videocam_off : Icons.videocam),
+            heroTag: "mic",
+            child: Icon(
+              jinroPlayer[0].isMute == true ?
+                Icons.mic_off : Icons.mic
+            ),
+            // Switch the mic on/off
+            onPressed: () {
+              if (jinroPlayer[0].isMute == true){
+                jinroPlayer[0].stream?.getAudioTracks()[0].enabled = true;
+                jinroPlayerNotifier.copyWith(
+                    jinroPlayerState: jinroPlayer[0],
+                    stream: jinroPlayer[0].stream,
+                    isMute: false,
+                );
+              } else {  // isMute == false
+                jinroPlayer[0].stream?.getAudioTracks()[0].enabled = false;
+                jinroPlayerNotifier.copyWith(
+                    jinroPlayerState: jinroPlayer[0],
+                    stream: jinroPlayer[0].stream,
+                    isMute: true,
+                );
+              }
+            }
+          ),
+          // if (micOn==false)
+          //   FloatingActionButton(
+          //     heroTag: "micOff",
+          //     child: const Icon(Icons.mic_off),
+          //     // Turn on the mic
+          //     onPressed: (){
+          //       // signaling.localStream?.getAudioTracks()[0].enabled = true;
+          //       _changeMicIcon();
+          //     },
+          //   ),
+          // if (micOn==true)
+          //   FloatingActionButton(
+          //     heroTag: "micOn",
+          //     child: const Icon(Icons.mic),
+          //     // Turn off the mic
+          //     onPressed: (){
+          //       // signaling.localStream?.getAudioTracks()[0].enabled = false;
+          //       _changeMicIcon();
+          //     },
+          //   ),
+          // // Mic End
+          const SizedBox(height: 5),
+          // Video
+          FloatingActionButton(
+            heroTag: "video",
+            child: Icon(
+              jinroPlayer[0].iconIndex == iconView.thumbnail.index ?
+                Icons.videocam_off : Icons.videocam
+            ),
             // Switch the camera on/off
             onPressed: (){
-              if (jinroPlayer.iconIndex == 0){
-                jinroPlayer.localStream?.getVideoTracks()[0].enabled = true;
-                jinroPlayerNotifier.copyWith(localStream: jinroPlayer.localStream, iconIndex: 1);
-              } else if (jinroPlayer.iconIndex == 1) {
-                jinroPlayer.localStream?.getVideoTracks()[0].enabled = false;
-                jinroPlayerNotifier.copyWith(localStream: jinroPlayer.localStream, iconIndex: 0);
+              if (jinroPlayer[0].iconIndex == iconView.thumbnail.index){
+                jinroPlayer[0].stream?.getVideoTracks()[0].enabled = true;
+                jinroPlayerNotifier.copyWith(
+                  jinroPlayerState: jinroPlayer[0],
+                  stream: jinroPlayer[0].stream,
+                  iconIndex: iconView.video.index
+                );
+              } else if (jinroPlayer[0].iconIndex == iconView.video.index) {
+                jinroPlayer[0].stream?.getVideoTracks()[0].enabled = false;
+                jinroPlayerNotifier.copyWith(
+                  jinroPlayerState: jinroPlayer[0],
+                  stream: jinroPlayer[0].stream,
+                  iconIndex: iconView.thumbnail.index
+                );
               }
             },
           ),

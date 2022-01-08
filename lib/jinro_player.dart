@@ -3,11 +3,39 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 
-// Riverpod
-final jinroPlayerProvider = StateNotifierProvider<JinroPlayerNotifier, JinroPlayerState>((ref) => JinroPlayerNotifier());
+// Index for switching icon view (0 is thumbnail, 1 is video)
+enum iconView {
+  thumbnail,
+  video,
+}
 
-class JinroPlayerNotifier extends StateNotifier<JinroPlayerState>{
-  JinroPlayerNotifier(): super(JinroPlayerState());
+// Riverpod (List of JinroPlayerState)
+final jinroPlayerProvider =
+  StateNotifierProvider<JinroPlayerNotifier, List<JinroPlayerState>>(
+  (ref) => JinroPlayerNotifier());
+
+class JinroPlayerNotifier extends StateNotifier<List<JinroPlayerState>>{
+  JinroPlayerNotifier(): super([
+    JinroPlayerState(id: 0), // It's you! (id=0)
+    JinroPlayerState(
+      id: 1,
+      playerName: 'masyu',
+      thumbnail:  'assets/images/masyu.jpg',
+      voice:      'sounds/shake.mp3',
+    ), // masyu (id=1)
+    JinroPlayerState(
+      id: 2,
+      playerName: '即死ちゃん',
+      thumbnail:  'assets/images/sokushichan.jpg',
+      voice:      'sounds/onegaishimasusokushichan.mp3',
+    ), // sokushi (id=2)
+    JinroPlayerState(
+      id: 3,
+      playerName: '葵',
+      thumbnail:  'assets/images/aoi.jpg',
+      voice:      'sounds/hiiteiku.mp3'
+    ), // aoi (id=3)
+  ]);
 
   // Couldn't use initialize() because the view wasn't displayed properly.
   // Undesirable when switching the player's account.
@@ -16,45 +44,58 @@ class JinroPlayerNotifier extends StateNotifier<JinroPlayerState>{
   // }
 
   void copyWith({
+    required JinroPlayerState jinroPlayerState,
     String? playerName,
     String? thumbnail,
     String? voice,
-    MediaStream? localStream,
+    MediaStream? stream,
     RTCVideoRenderer? renderer,
     RTCVideoView? view,
     int? iconIndex,
+    bool? isMute,
   }){
-    playerName ??= state.playerName;
-    thumbnail ??= state.thumbnail;
-    voice ??= state.voice;
-    localStream ??= state.localStream;
-    renderer ??= state.renderer;
-    view ??= state.view;  // Used for mirror the view
-    iconIndex ??= state.iconIndex;
-    state = JinroPlayerState(
-      playerName: playerName,
-      thumbnail: thumbnail,
-      voice: voice,
-      localStream: localStream,
-      renderer: renderer,
-      view: view,
-      iconIndex: iconIndex,
-    );
+    playerName ??= jinroPlayerState.playerName;
+    thumbnail ??= jinroPlayerState.thumbnail;
+    voice ??= jinroPlayerState.voice;
+    stream ??= jinroPlayerState.stream;
+    renderer ??= jinroPlayerState.renderer;
+    view ??= jinroPlayerState.view;  // Used for mirror the view
+    iconIndex ??= jinroPlayerState.iconIndex;
+    isMute ??= jinroPlayerState.isMute;
+    state = [
+      for (final jinroPlayer in state)
+        if (jinroPlayer.id == jinroPlayerState.id)
+          JinroPlayerState(
+            id: jinroPlayerState.id,
+            playerName: playerName,
+            thumbnail: thumbnail,
+            voice: voice,
+            stream: stream,
+            renderer: renderer,
+            view: view,
+            iconIndex: iconIndex,
+            isMute: isMute,
+          )
+        else
+          jinroPlayer,
+    ];
   }
 }
 
 class JinroPlayerState{
   JinroPlayerState({  // Constructor
+    this.id = 0,
     this.playerName = 'ゲスト',
     this.thumbnail = 'assets/images/boshuchu.jpg',
     this.voice = 'sounds/wakoyubi.mp3',
-    this.localStream,
+    this.stream,
     RTCVideoRenderer? renderer,
     RTCVideoView? view,
     this.iconIndex = 0,
+    this.isMute = true,
   }){
     renderer == null ? this.renderer.initialize() : this.renderer = renderer;
-    this.renderer.srcObject = localStream;
+    this.renderer.srcObject = stream;
     view == null ? this.view = RTCVideoView(this.renderer) : this.view = view;
     playerIcon = Container(
       width: 100, height: 100, margin: const EdgeInsets.all(5),
@@ -110,13 +151,15 @@ class JinroPlayerState{
       ),
     );
   }
+  int id;
   String playerName;  // Player name
   String thumbnail;   // File path of player thumbnail
   String voice;       // File path of player voice
-  MediaStream? localStream;
+  MediaStream? stream;
   RTCVideoRenderer renderer = RTCVideoRenderer();
   late RTCVideoView view; // Own video
   int iconIndex;  // Index for switching icon view (0 is thumbnail, 1 is video)
+  bool isMute;
 
   final _audio = AudioCache();
   late Container playerIcon;

@@ -21,15 +21,17 @@ class NextPage extends HookConsumerWidget{
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            jinroPlayer.playerIcon,
+            jinroPlayer[0].playerIcon,
             const SizedBox(height: 8),
             SizedBox(
               // width: 80,
               child: ElevatedButton(
-                  onPressed: (){
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => PlayerSetting()));
-                  },
-                  child: const Text('アカウント編集')),
+                style: ElevatedButton.styleFrom(primary: Colors.black38),
+                onPressed: (){
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => PlayerSetting()));
+                },
+                child: const Text('アカウント編集'),
+              ),
             ),
             const SizedBox(height: 8),
             SizedBox(
