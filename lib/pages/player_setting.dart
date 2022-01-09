@@ -2,10 +2,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../jinro_player.dart';
+import '../util_firebase.dart';
 
 class PlayerSetting extends HookConsumerWidget{
   PlayerSetting({Key? key}) : super(key: key);
   final TextEditingController nameField = TextEditingController(text: '');
+  UtilFirebase utilFirebase = UtilFirebase();
 
   @override
   Widget build(BuildContext context, WidgetRef ref){
@@ -38,6 +40,11 @@ class PlayerSetting extends HookConsumerWidget{
                 onPressed: (){
                   jinroPlayerNotifier.copyWith(
                     jinroPlayerState: jinroPlayer[0], playerName: nameField.text
+                  );
+                  // Update Firestore
+                  utilFirebase.updateFirestore(
+                      jinroPlayer: jinroPlayer[0],
+                      playeName: nameField.text,
                   );
                 },
                 child: const Text('名前変更')),

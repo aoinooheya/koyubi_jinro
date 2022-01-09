@@ -1,4 +1,5 @@
 import 'package:audioplayers/audioplayers.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:myapp/jinro_player.dart';
@@ -12,9 +13,19 @@ class NextPage extends HookConsumerWidget{
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final jinroPlayer = ref.watch(jinroPlayerProvider);
+    final jinroPlayerNotifier = ref.watch(jinroPlayerProvider.notifier);
 
     return Scaffold(
       appBar: AppBar(
+        // Sign out
+        leading: IconButton(
+          icon: const Icon(Icons.logout),
+          onPressed: () async {
+            await FirebaseAuth.instance.signOut();
+            jinroPlayerNotifier.initialize(jinroPlayer[0]);
+            Navigator.pop(context);
+          },
+        ),
         title: const Text('やりたい村を選択してね＾ー＾'),
       ),
       body: Center(

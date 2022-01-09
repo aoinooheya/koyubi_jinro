@@ -5,8 +5,8 @@ import 'package:flutter_webrtc/flutter_webrtc.dart';
 
 // Index for switching icon view (0 is thumbnail, 1 is video)
 enum iconView {
-  thumbnail,
-  video,
+  thumbnail,  // index = 0
+  video,      // index = 1
 }
 
 // Riverpod (List of JinroPlayerState)
@@ -16,35 +16,40 @@ final jinroPlayerProvider =
 
 class JinroPlayerNotifier extends StateNotifier<List<JinroPlayerState>>{
   JinroPlayerNotifier(): super([
-    JinroPlayerState(id: 0), // It's you! (id=0)
+    JinroPlayerState(), // It's you! (id=0)
     JinroPlayerState(
-      id: 1,
+      id: '1',
       playerName: 'masyu',
       thumbnail:  'assets/images/masyu.jpg',
       voice:      'sounds/shake.mp3',
     ), // masyu (id=1)
     JinroPlayerState(
-      id: 2,
+      id: '2',
       playerName: '即死ちゃん',
       thumbnail:  'assets/images/sokushichan.jpg',
       voice:      'sounds/onegaishimasusokushichan.mp3',
     ), // sokushi (id=2)
     JinroPlayerState(
-      id: 3,
+      id: '3',
       playerName: '葵',
       thumbnail:  'assets/images/aoi.jpg',
       voice:      'sounds/hiiteiku.mp3'
     ), // aoi (id=3)
   ]);
 
-  // Couldn't use initialize() because the view wasn't displayed properly.
-  // Undesirable when switching the player's account.
-  // void initialize(){
-  //   state = JinroPlayerState();
-  // }
+  void initialize(JinroPlayerState jinroPlayerState) {
+    state = [
+      for (final jinroPlayer in state)
+        if (jinroPlayer.id == jinroPlayerState.id)
+          JinroPlayerState()
+        else
+          jinroPlayer,
+    ];
+  }
 
   void copyWith({
     required JinroPlayerState jinroPlayerState,
+    String? id,
     String? playerName,
     String? thumbnail,
     String? voice,
@@ -53,7 +58,8 @@ class JinroPlayerNotifier extends StateNotifier<List<JinroPlayerState>>{
     RTCVideoView? view,
     int? iconIndex,
     bool? isMute,
-  }){
+  }) async {
+    id ??= jinroPlayerState.id;
     playerName ??= jinroPlayerState.playerName;
     thumbnail ??= jinroPlayerState.thumbnail;
     voice ??= jinroPlayerState.voice;
@@ -66,7 +72,7 @@ class JinroPlayerNotifier extends StateNotifier<List<JinroPlayerState>>{
       for (final jinroPlayer in state)
         if (jinroPlayer.id == jinroPlayerState.id)
           JinroPlayerState(
-            id: jinroPlayerState.id,
+            id: id,
             playerName: playerName,
             thumbnail: thumbnail,
             voice: voice,
@@ -84,14 +90,14 @@ class JinroPlayerNotifier extends StateNotifier<List<JinroPlayerState>>{
 
 class JinroPlayerState{
   JinroPlayerState({  // Constructor
-    this.id = 0,
+    this.id = '0',    // Updated with uid
     this.playerName = 'ゲスト',
     this.thumbnail = 'assets/images/boshuchu.jpg',
     this.voice = 'sounds/wakoyubi.mp3',
     this.stream,
     RTCVideoRenderer? renderer,
     RTCVideoView? view,
-    this.iconIndex = 0,
+    this.iconIndex = 0, // iconView = thumbnail
     this.isMute = true,
   }){
     renderer == null ? this.renderer.initialize() : this.renderer = renderer;
@@ -151,7 +157,7 @@ class JinroPlayerState{
       ),
     );
   }
-  int id;
+  String id;          // uid
   String playerName;  // Player name
   String thumbnail;   // File path of player thumbnail
   String voice;       // File path of player voice

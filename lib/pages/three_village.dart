@@ -15,10 +15,6 @@ class ThreeVillage extends HookConsumerWidget {
   final TextEditingController textEditingControllerCreate = TextEditingController(text: '');
   final TextEditingController textEditingControllerJoin = TextEditingController(text: '');
 
-  void _changeMicIcon(){
-    // setState(() {micOn = !micOn;});
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final jinroPlayer = ref.watch(jinroPlayerProvider);
@@ -139,27 +135,6 @@ class ThreeVillage extends HookConsumerWidget {
               }
             }
           ),
-          // if (micOn==false)
-          //   FloatingActionButton(
-          //     heroTag: "micOff",
-          //     child: const Icon(Icons.mic_off),
-          //     // Turn on the mic
-          //     onPressed: (){
-          //       // signaling.localStream?.getAudioTracks()[0].enabled = true;
-          //       _changeMicIcon();
-          //     },
-          //   ),
-          // if (micOn==true)
-          //   FloatingActionButton(
-          //     heroTag: "micOn",
-          //     child: const Icon(Icons.mic),
-          //     // Turn off the mic
-          //     onPressed: (){
-          //       // signaling.localStream?.getAudioTracks()[0].enabled = false;
-          //       _changeMicIcon();
-          //     },
-          //   ),
-          // // Mic End
           const SizedBox(height: 5),
           // Video
           FloatingActionButton(

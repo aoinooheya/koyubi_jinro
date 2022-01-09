@@ -1,4 +1,5 @@
 import 'package:audioplayers/audioplayers.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -7,7 +8,10 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:myapp/jinro_player.dart';
 import 'package:myapp/pages/next_page.dart';
+import 'package:myapp/util_firebase.dart';
 import 'package:twitter_login/twitter_login.dart';
+
+final infoTextProvider = StateProvider((ref) => '');
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,37 +43,36 @@ class MyApp extends StatelessWidget {
 class MyHomePage extends HookConsumerWidget {
   MyHomePage({Key? key}) : super(key: key);
   final _audio = AudioCache();
+  final UtilFirebase utilFirebase = UtilFirebase();
   // Email Registration&Login
-  final String email = "test@test.com";
-  final String password = "TESTTEST";
-  final String infoText = "";
+  // final String email = "test@test.com";
+  // final String password = "TESTTEST";
 
   // Twitter login
-  Future<UserCredential> signInWithTwitter() async {
-    // Create a TwitterLogin instance
-    final twitterLogin = TwitterLogin(
-        apiKey: 'td7SDUJWIAlaABijo0ejc3S12',
-        apiSecretKey:'VqJawqTJkK9GxN4RTP9LLLblToaWaXAf8jXYSDzzf2Di3UZt2v',
-        redirectURI: 'koyubijinro://'
-    );
-    // Trigger the sign-in flow
-    final authResult = await twitterLogin.login();
-    // Create a credential from the access token
-    final twitterAuthCredential = TwitterAuthProvider.credential(
-      accessToken: authResult.authToken!,
-      secret: authResult.authTokenSecret!,
-    );
-    // Once signed in, return the UserCredential
-    return await FirebaseAuth.instance.signInWithCredential(twitterAuthCredential);
-  }
+  // Future<UserCredential> signInWithTwitter() async {
+  //   // Create a TwitterLogin instance
+  //   final twitterLogin = TwitterLogin(
+  //       apiKey: 'td7SDUJWIAlaABijo0ejc3S12',
+  //       apiSecretKey:'VqJawqTJkK9GxN4RTP9LLLblToaWaXAf8jXYSDzzf2Di3UZt2v',
+  //       redirectURI: 'koyubijinro://'
+  //   );
+  //   // Trigger the sign-in flow
+  //   final authResult = await twitterLogin.login();
+  //   // Create a credential from the access token
+  //   final twitterAuthCredential = TwitterAuthProvider.credential(
+  //     accessToken: authResult.authToken!,
+  //     secret: authResult.authTokenSecret!,
+  //   );
+  //   // Once signed in, return the UserCredential
+  //   return await FirebaseAuth.instance.signInWithCredential(twitterAuthCredential);
+  // }
 
-  Future<void> updateIconByLoginWithMediaAccess(
+  void updateIconByLoginWithMediaAccess(
     JinroPlayerState jinroPlayer,
     JinroPlayerNotifier jinroPlayerNotifier
   ) async {
-    // Couldn't use initialize() because the view wasn't displayed properly.
-    // Undesirable when switching the player's account.
-    // jinroPlayerNotifier.initialize();
+    String? playerName;
+    String? thumbnail;
 
     // Obtain access to UserMedia (Video & Audio)
     var stream = await navigator.mediaDevices
@@ -78,25 +81,49 @@ class MyHomePage extends HookConsumerWidget {
     stream.getAudioTracks()[0].enabled = false;
     stream.getVideoTracks()[0].enabled = false;
 
+    // Try to get the user
+    var userSnapshot = await FirebaseFirestore.instance.collection('users').
+      doc(FirebaseAuth.instance.currentUser!.uid).get();
+    // If the user exists
+    if (userSnapshot.exists){
+      var userData = userSnapshot.data() as Map<String, dynamic>;
+      playerName = userData['playerName'];
+      thumbnail = userData['thumbnail'];
+    }
+    // If the user doesn't exist
+    else {
+      playerName = FirebaseAuth.instance.currentUser!.displayName;
+      thumbnail = FirebaseAuth.instance.currentUser!.photoURL;
+    }
+
+    // Update player icon
     jinroPlayerNotifier.copyWith(
       jinroPlayerState: jinroPlayer,
-      playerName: FirebaseAuth.instance.currentUser!.displayName,
-      thumbnail: FirebaseAuth.instance.currentUser!.photoURL,
+      id: FirebaseAuth.instance.currentUser!.uid,
+      playerName: playerName,
+      thumbnail: thumbnail,
       stream: stream,
       view: RTCVideoView(jinroPlayer.renderer, mirror: true),
+    );
+    // Update Firestore
+    utilFirebase.updateFirestore(
+      jinroPlayer: jinroPlayer,
+      playeName: playerName,
+      thumbnail: thumbnail,
     );
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final jinroPlayer = ref.read(jinroPlayerProvider);
-    final jinroPlayerNotifier = ref.read(jinroPlayerProvider.notifier);
+    final jinroPlayer = ref.watch(jinroPlayerProvider);
+    final jinroPlayerNotifier = ref.watch(jinroPlayerProvider.notifier);
+    final infoText = ref.watch(infoTextProvider);
+    final infoTextNotifier = ref.watch(infoTextProvider.notifier);
     return Scaffold(
       appBar: AppBar(
         title: const Text('こゆび人狼（仮）'),
       ),
       body:
-      // const TodoWidget(),
       Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -167,28 +194,26 @@ class MyHomePage extends HookConsumerWidget {
             const SizedBox(height: 8),
             // Google sign in
             ElevatedButton(
-                onPressed: () async {
-                  try {
-                    // Trigger the authentication flow
-                    final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-                    // Obtain the auth details from the request
-                    final GoogleSignInAuthentication? googleAuth = await googleUser?.authentication;
-                    // Create a new credential
-                    final credential = GoogleAuthProvider.credential(
-                      accessToken: googleAuth?.accessToken,
-                      idToken: googleAuth?.idToken,
-                    );
-                    // Once signed in, return the UserCredential
-                    await FirebaseAuth.instance.signInWithCredential(credential);
-                    updateIconByLoginWithMediaAccess(jinroPlayer[0], jinroPlayerNotifier);
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => NextPage()));
-                  } catch (e) {
-                    // setState(() {
-                    //   infoText = "登録に失敗しました：${e.toString()}";
-                    // });
-                  }
-                },
-                child: const Text('Googleでログイン')
+              onPressed: () async {
+                try {
+                  // Trigger the authentication flow
+                  final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+                  // Obtain the auth details from the request
+                  final GoogleSignInAuthentication? googleAuth = await googleUser?.authentication;
+                  // Create a new credential
+                  final credential = GoogleAuthProvider.credential(
+                    accessToken: googleAuth?.accessToken,
+                    idToken: googleAuth?.idToken,
+                  );
+                  // Once signed in, return the UserCredential
+                  await FirebaseAuth.instance.signInWithCredential(credential);
+                  updateIconByLoginWithMediaAccess(jinroPlayer[0], jinroPlayerNotifier);
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => NextPage()));
+                } catch (e) {
+                  infoTextNotifier.update((state) => "登録に失敗しました");
+                }
+              },
+              child: const Text('Googleでログイン')
             ),
             // const SizedBox(height: 8),
             // Twitter login
@@ -208,63 +233,19 @@ class MyHomePage extends HookConsumerWidget {
 }
 
 ////////////////////////////////////////////////////
-// // State
-// final playerProvider = StateNotifierProvider<PlayerStateNotifier, PlayerState>((ref) => PlayerStateNotifier());
-//
-// class PlayerStateNotifier extends StateNotifier<PlayerState>{
-//   PlayerStateNotifier(): super(PlayerState());
-//
-//   // void initialize(){
-//   //   state = PlayerState();
-//   // }
-//
-//   void copyWith({
-//     MediaStream? localStream,
-//     RTCVideoRenderer? renderer,
-//     RTCVideoView? view,
-//   }){
-//     localStream ??= state.localStream;
-//     renderer ??= state.renderer;
-//     view ??= state.view;  // Used for mirror the view
-//     state = PlayerState(
-//       localStream: localStream,
-//       renderer: renderer,
-//       view: view,
-//     );
-//   }
-// }
-//
-// class PlayerState {
-//   PlayerState({
-//     this.localStream,
-//     RTCVideoRenderer? renderer,
-//     RTCVideoView? view,
-//   }){
-//     print('localStream = $localStream');
-//     renderer == null ? this.renderer.initialize() : this.renderer = renderer;
-//     this.renderer.srcObject = localStream;
-//     print('renderer.srcObject = ${renderer?.srcObject}');
-//     view == null ? this.view = RTCVideoView(this.renderer) : this.view = view;
-//     print('view = $view');
-//
-//     icon = Container(
-//         width: 100, height: 100,
-//         decoration: BoxDecoration(
-//           border: Border.all(color: Colors.grey, width: 2.0),
-//         ),
-//         child: this.view,
-//       );
-//   }
-//
-//   MediaStream? localStream;
-//   RTCVideoRenderer renderer = RTCVideoRenderer();
-//   late RTCVideoView view;
-//
-//   late Container icon;
-// }
-////////////////////////////////////////////////////
 // // main
-// void main() => runApp(const ProviderScope(child: MyApp()));
+// Future<void> main() async {
+//   WidgetsFlutterBinding.ensureInitialized();
+//   await Firebase.initializeApp(
+//     options: const FirebaseOptions(
+//         apiKey: "AIzaSyC2NMnW6VHDEBjdr1y7-F-MBLu2iv8kd9E",
+//         appId: "1:420630967339:web:b3f404144679c775b9e66e",
+//         messagingSenderId: "G-LWJ1LB946C",
+//         projectId: "koyubijinro"
+//     )
+//   );
+//   runApp(const ProviderScope(child: MyApp()));
+// }
 //
 // class MyApp extends StatelessWidget {
 //   const MyApp({Key? key}) : super(key: key);
@@ -282,41 +263,96 @@ class MyHomePage extends HookConsumerWidget {
 // class View extends HookConsumerWidget{
 //   const View({Key? key}) : super(key: key);
 //
-//   // Future<void> mediaAccess(
-//   //   JinroPlayerState player,
-//   //   JinroPlayerNotifier playerNotifier
-//   // ) async {
-//   //   // playerNotifier.initialize();
-//   //   var stream = await navigator.mediaDevices.getUserMedia({'video': true, 'audio': true});
-//   //   print('stream = $stream');
-//   //   playerNotifier.copyWith(
-//   //     localStream: stream,
-//   //     view: RTCVideoView(player.renderer, mirror: true)
-//   //   );
-//   // }
+//   Future<void> updateIconByLoginWithMediaAccess(
+//       JinroPlayerState jinroPlayer,
+//       JinroPlayerNotifier jinroPlayerNotifier
+//   ) async {
+//     jinroPlayerNotifier.copyWith(
+//       jinroPlayerState: jinroPlayer,
+//       id: FirebaseAuth.instance.currentUser!.uid,
+//       playerName: FirebaseAuth.instance.currentUser!.displayName,
+//       thumbnail: FirebaseAuth.instance.currentUser!.photoURL,
+//     );
+//   }
+//   @override
+//   Widget build(BuildContext context, WidgetRef ref) {
+//     final jinroPlayer = ref.watch(jinroPlayerProvider);
+//     final jinroPlayerNotifier = ref.watch(jinroPlayerProvider.notifier);
+//     return Scaffold(
+//       body: Center(
+//         child: Column(
+//           children: <Widget>[
+//             // Sign in anonymously
+//             ElevatedButton(
+//               onPressed: () async {
+//                 await FirebaseAuth.instance.signInAnonymously();
+//                 updateIconByLoginWithMediaAccess(jinroPlayer[0], jinroPlayerNotifier);
+//                 // Navigator.push(context, MaterialPageRoute(builder: (context) => NextPage()));
+//               },
+//               child: Text(jinroPlayer[0].id)
+//             ) ,
+//             // Google sign in
+//             ElevatedButton(
+//               onPressed: () async {
+//                 try {
+//                   final GoogleSignInAccount? googleUser = await GoogleSignIn()
+//                       .signIn();
+//                   final GoogleSignInAuthentication? googleAuth = await googleUser
+//                       ?.authentication;
+//                   final credential = GoogleAuthProvider.credential(
+//                     accessToken: googleAuth?.accessToken,
+//                     idToken: googleAuth?.idToken,
+//                   );
+//                   await FirebaseAuth.instance.signInWithCredential(credential);
+//                   updateIconByLoginWithMediaAccess(
+//                       jinroPlayer[0], jinroPlayerNotifier);
+//                   // Navigator.push(context, MaterialPageRoute(builder: (context) => NextPage()));
+//                 } catch (e){
+//                 }
+//               },
+//               child: Text(jinroPlayer[0].id)
+//             ),
+//           ]
+//         )
+//       )
+//     );
+//   }
+// }
+//////////////////////////////////////////////////
+// Access to Firestore data
+// final messageProvider = StateProvider((ref) => 'null');
+//
+// class RegisterUser extends HookConsumerWidget{
+//   RegisterUser({Key? key}) : super(key: key);
+//   final TextEditingController textEditingControllerMessage = TextEditingController(text: '');
 //
 //   @override
 //   Widget build(BuildContext context, WidgetRef ref) {
-//     final player = ref.watch(jinroPlayerProvider);
-//     final playerNotifier = ref.watch(jinroPlayerProvider.notifier);
-//     return Scaffold(
-//       body: Wrap(
-//         children: <Widget>[
-//           ElevatedButton(
-//             onPressed: (){playerNotifier.copyWith(jinroPlayerState: player[1], playerName: 'debug');},
-//             child: player[0].playerIcon
-//           ) ,
-//           player[1].playerIcon,
-//           for (final jinroPlayer in player)
-//             jinroPlayer.playerIcon,
-//         ]
-//       )
+//     final message = ref.watch(messageProvider);
+//     final messager = ref.watch(messageProvider.notifier);
+//     return Column(
+//       children: <Widget>[
+//         ElevatedButton(
+//           onPressed: () async {
+//             await FirebaseFirestore.instance.
+//               collection('users').doc(textEditingControllerMessage.text).set({'name': textEditingControllerMessage.text});
+//           },
+//           child: TextFormField(
+//             controller: textEditingControllerMessage,
+//           ),
+//         ),
+//         ElevatedButton(
+//           onPressed: () async {
+//             var userSnapshot = await FirebaseFirestore.instance.
+//               collection('users').doc(textEditingControllerMessage.text).get();
+//             if (userSnapshot.exists){
+//               var data = userSnapshot.data() as Map<String, dynamic>;
+//               messager.update((state) => data['name']);
+//             }
+//           },
+//           child: Text(message),
+//         )
+//       ]
 //     );
-//       // ElevatedButton(
-//       //   onPressed: () async {
-//       //     mediaAccess(player, playerNotifier);
-//       //   },
-//       //   child: player.icon
-//       // );
 //   }
 // }
