@@ -12,7 +12,7 @@ class UtilFirebase{
   }) async {
     await FirebaseFirestore.instance.
       collection('users').doc(FirebaseAuth.instance.currentUser!.uid).set({
-        'id' : FirebaseAuth.instance.currentUser!.uid,
+        'playerId' : FirebaseAuth.instance.currentUser!.uid,
         'playerName': playeName ?? jinroPlayer.playerName,
         'thumbnail' : thumbnail ?? jinroPlayer.thumbnail,
         'voice' : voice ?? jinroPlayer.voice,

@@ -11,8 +11,8 @@ class PlayerSetting extends HookConsumerWidget{
 
   @override
   Widget build(BuildContext context, WidgetRef ref){
-    final jinroPlayer = ref.watch(jinroPlayerProvider);
-    final jinroPlayerNotifier = ref.watch(jinroPlayerProvider.notifier);
+    final jinroPlayerList = ref.watch(jinroPlayerListNotifierProvider);
+    final jinroPlayerListNotifier = ref.watch(jinroPlayerListNotifierProvider.notifier);
 
     return Scaffold(
       appBar: AppBar(
@@ -22,7 +22,7 @@ class PlayerSetting extends HookConsumerWidget{
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            jinroPlayer[0].playerIcon,
+            jinroPlayerList[0].playerIcon,
             // Set player's name
             SizedBox(
               width: 130,
@@ -38,12 +38,12 @@ class PlayerSetting extends HookConsumerWidget{
               width: 100,
               child: ElevatedButton(
                 onPressed: (){
-                  jinroPlayerNotifier.copyWith(
-                    jinroPlayerState: jinroPlayer[0], playerName: nameField.text
+                  jinroPlayerListNotifier.copyWith(
+                    jinroPlayerState: jinroPlayerList[0], playerName: nameField.text
                   );
                   // Update Firestore
                   utilFirebase.updateFirestore(
-                      jinroPlayer: jinroPlayer[0],
+                      jinroPlayer: jinroPlayerList[0],
                       playeName: nameField.text,
                   );
                 },

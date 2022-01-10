@@ -11,27 +11,35 @@ class ThreeVillage extends HookConsumerWidget {
 
   final bool micOn = false;
   final Signaling signaling = Signaling();
+  // late Map<String, String> result;
   late final String? roomId;
   final TextEditingController textEditingControllerCreate = TextEditingController(text: '');
   final TextEditingController textEditingControllerJoin = TextEditingController(text: '');
+  // late Map<String, dynamic> result;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final jinroPlayer = ref.watch(jinroPlayerProvider);
-    final jinroPlayerNotifier = ref.watch(jinroPlayerProvider.notifier);
+    final jinroPlayerList = ref.watch(jinroPlayerListNotifierProvider);
+    final jinroPlayerListNotifier = ref.watch(jinroPlayerListNotifierProvider.notifier);
     useEffect((){
-      signaling.initializeRemoteStream(jinroPlayer[1].renderer);
+      signaling.initializeRemoteStream(jinroPlayerList[1].renderer);
 
       // When we get remote stream, set to masyu??
-      signaling.onAddRemoteStream = ((stream) {
-        jinroPlayerNotifier.copyWith(
-          jinroPlayerState: jinroPlayer[1], stream: stream, iconIndex: iconView.video.index,
+      signaling.onAddRemoteStream = ((stream) async {
+        // Wait for initialization of playerIdRemote (Should use listen??)
+        await Future.delayed(const Duration(seconds: 1));
+        jinroPlayerListNotifier.copyWith(
+          jinroPlayerState: jinroPlayerList[1],
+          // playerId: playerIdRemote,
+          stream: stream,
+          iconIndex: iconView.video.index,
         );
         print('masyu = onAddRemoteStream');
-        print('masyu.renderer.srcObject = ${jinroPlayer[1].renderer.srcObject}');
+        print('masyu.renderer.srcObject = ${jinroPlayerList[1].renderer.srcObject}');
       });
       return null;
     }, const []);
+    print('masyu.playerId@build = ${jinroPlayerList[1].playerId}');
     return Scaffold(
       appBar: AppBar(
           title: Row(
@@ -48,7 +56,7 @@ class ThreeVillage extends HookConsumerWidget {
             Wrap(
               children: <Widget>[
                 // Display player icons
-                for (final jinroPlayer in jinroPlayer)
+                for (final jinroPlayer in jinroPlayerList)
                   jinroPlayer.playerIcon,
               ]
             ),
@@ -56,27 +64,29 @@ class ThreeVillage extends HookConsumerWidget {
               children: <Widget>[
                 ElevatedButton(
                   onPressed: () async {
+                    // result = await signaling.createRoom(
                     roomId = await signaling.createRoom(
                       textEditingControllerCreate.text,
-                      jinroPlayer[0].stream!,
-                      jinroPlayer[1].renderer
+                      jinroPlayerList,
+                      jinroPlayerListNotifier
                     );
+                    // roomId = result['roomId'];
+                    // playerIdRemote = result['playerIdCallee']!;
                     textEditingControllerCreate.text = roomId!;
                   },
+                  // print('playerIdCallee@create = $playerIdRemote');
                   child: const Text("Create room"),
                 ),
                 ElevatedButton(
                   onPressed: () {
                     // Add roomId
+                    // playerIdRemote = await signaling.joinRoom(
                     signaling.joinRoom(
                       textEditingControllerJoin.text,
-                      jinroPlayer[0].stream!,
-                      jinroPlayer[1].renderer,
+                      jinroPlayerList,
+                      jinroPlayerListNotifier,
                     );
-                    // Temporarily switch here.
-                    // Originally wanted to switch
-                    // when the other side video's on/off was changed
-                    jinroPlayerNotifier.copyWith(jinroPlayerState: jinroPlayer[1], iconIndex: 1);
+                    // print('playerIdRemote@return = $playerIdRemote');
                   },
                   child: const Text("Join room"),
                 ),
@@ -113,23 +123,23 @@ class ThreeVillage extends HookConsumerWidget {
           FloatingActionButton(
             heroTag: "mic",
             child: Icon(
-              jinroPlayer[0].isMute == true ?
+              jinroPlayerList[0].isMute == true ?
                 Icons.mic_off : Icons.mic
             ),
             // Switch the mic on/off
             onPressed: () {
-              if (jinroPlayer[0].isMute == true){
-                jinroPlayer[0].stream?.getAudioTracks()[0].enabled = true;
-                jinroPlayerNotifier.copyWith(
-                    jinroPlayerState: jinroPlayer[0],
-                    stream: jinroPlayer[0].stream,
+              if (jinroPlayerList[0].isMute == true){
+                jinroPlayerList[0].stream?.getAudioTracks()[0].enabled = true;
+                jinroPlayerListNotifier.copyWith(
+                    jinroPlayerState: jinroPlayerList[0],
+                    stream: jinroPlayerList[0].stream,
                     isMute: false,
                 );
               } else {  // isMute == false
-                jinroPlayer[0].stream?.getAudioTracks()[0].enabled = false;
-                jinroPlayerNotifier.copyWith(
-                    jinroPlayerState: jinroPlayer[0],
-                    stream: jinroPlayer[0].stream,
+                jinroPlayerList[0].stream?.getAudioTracks()[0].enabled = false;
+                jinroPlayerListNotifier.copyWith(
+                    jinroPlayerState: jinroPlayerList[0],
+                    stream: jinroPlayerList[0].stream,
                     isMute: true,
                 );
               }
@@ -140,23 +150,23 @@ class ThreeVillage extends HookConsumerWidget {
           FloatingActionButton(
             heroTag: "video",
             child: Icon(
-              jinroPlayer[0].iconIndex == iconView.thumbnail.index ?
+              jinroPlayerList[0].iconIndex == iconView.thumbnail.index ?
                 Icons.videocam_off : Icons.videocam
             ),
             // Switch the camera on/off
             onPressed: (){
-              if (jinroPlayer[0].iconIndex == iconView.thumbnail.index){
-                jinroPlayer[0].stream?.getVideoTracks()[0].enabled = true;
-                jinroPlayerNotifier.copyWith(
-                  jinroPlayerState: jinroPlayer[0],
-                  stream: jinroPlayer[0].stream,
+              if (jinroPlayerList[0].iconIndex == iconView.thumbnail.index){
+                jinroPlayerList[0].stream?.getVideoTracks()[0].enabled = true;
+                jinroPlayerListNotifier.copyWith(
+                  jinroPlayerState: jinroPlayerList[0],
+                  stream: jinroPlayerList[0].stream,
                   iconIndex: iconView.video.index
                 );
-              } else if (jinroPlayer[0].iconIndex == iconView.video.index) {
-                jinroPlayer[0].stream?.getVideoTracks()[0].enabled = false;
-                jinroPlayerNotifier.copyWith(
-                  jinroPlayerState: jinroPlayer[0],
-                  stream: jinroPlayer[0].stream,
+              } else if (jinroPlayerList[0].iconIndex == iconView.video.index) {
+                jinroPlayerList[0].stream?.getVideoTracks()[0].enabled = false;
+                jinroPlayerListNotifier.copyWith(
+                  jinroPlayerState: jinroPlayerList[0],
+                  stream: jinroPlayerList[0].stream,
                   iconIndex: iconView.thumbnail.index
                 );
               }

@@ -12,8 +12,8 @@ class NextPage extends HookConsumerWidget{
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final jinroPlayer = ref.watch(jinroPlayerProvider);
-    final jinroPlayerNotifier = ref.watch(jinroPlayerProvider.notifier);
+    final jinroPlayerList = ref.watch(jinroPlayerListNotifierProvider);
+    final jinroPlayerListNotifier = ref.watch(jinroPlayerListNotifierProvider.notifier);
 
     return Scaffold(
       appBar: AppBar(
@@ -22,7 +22,7 @@ class NextPage extends HookConsumerWidget{
           icon: const Icon(Icons.logout),
           onPressed: () async {
             await FirebaseAuth.instance.signOut();
-            jinroPlayerNotifier.initialize(jinroPlayer[0]);
+            jinroPlayerListNotifier.initialize(jinroPlayerList[0]);
             Navigator.pop(context);
           },
         ),
@@ -32,7 +32,7 @@ class NextPage extends HookConsumerWidget{
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            jinroPlayer[0].playerIcon,
+            jinroPlayerList[0].playerIcon,
             const SizedBox(height: 8),
             SizedBox(
               // width: 80,

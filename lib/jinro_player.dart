@@ -10,27 +10,27 @@ enum iconView {
 }
 
 // Riverpod (List of JinroPlayerState)
-final jinroPlayerProvider =
-  StateNotifierProvider<JinroPlayerNotifier, List<JinroPlayerState>>(
-  (ref) => JinroPlayerNotifier());
+final jinroPlayerListNotifierProvider =
+  StateNotifierProvider<JinroPlayerListNotifier, List<JinroPlayerState>>(
+  (ref) => JinroPlayerListNotifier());
 
-class JinroPlayerNotifier extends StateNotifier<List<JinroPlayerState>>{
-  JinroPlayerNotifier(): super([
+class JinroPlayerListNotifier extends StateNotifier<List<JinroPlayerState>>{
+  JinroPlayerListNotifier(): super([
     JinroPlayerState(), // It's you! (id=0)
     JinroPlayerState(
-      id: '1',
+      playerId: '1',
       playerName: 'masyu',
       thumbnail:  'assets/images/masyu.jpg',
       voice:      'sounds/shake.mp3',
     ), // masyu (id=1)
     JinroPlayerState(
-      id: '2',
+      playerId: '2',
       playerName: '即死ちゃん',
       thumbnail:  'assets/images/sokushichan.jpg',
       voice:      'sounds/onegaishimasusokushichan.mp3',
     ), // sokushi (id=2)
     JinroPlayerState(
-      id: '3',
+      playerId: '3',
       playerName: '葵',
       thumbnail:  'assets/images/aoi.jpg',
       voice:      'sounds/hiiteiku.mp3'
@@ -40,7 +40,7 @@ class JinroPlayerNotifier extends StateNotifier<List<JinroPlayerState>>{
   void initialize(JinroPlayerState jinroPlayerState) {
     state = [
       for (final jinroPlayer in state)
-        if (jinroPlayer.id == jinroPlayerState.id)
+        if (jinroPlayer.playerId == jinroPlayerState.playerId)
           JinroPlayerState()
         else
           jinroPlayer,
@@ -49,7 +49,7 @@ class JinroPlayerNotifier extends StateNotifier<List<JinroPlayerState>>{
 
   void copyWith({
     required JinroPlayerState jinroPlayerState,
-    String? id,
+    String? playerId,
     String? playerName,
     String? thumbnail,
     String? voice,
@@ -59,7 +59,7 @@ class JinroPlayerNotifier extends StateNotifier<List<JinroPlayerState>>{
     int? iconIndex,
     bool? isMute,
   }) async {
-    id ??= jinroPlayerState.id;
+    playerId ??= jinroPlayerState.playerId;
     playerName ??= jinroPlayerState.playerName;
     thumbnail ??= jinroPlayerState.thumbnail;
     voice ??= jinroPlayerState.voice;
@@ -70,9 +70,9 @@ class JinroPlayerNotifier extends StateNotifier<List<JinroPlayerState>>{
     isMute ??= jinroPlayerState.isMute;
     state = [
       for (final jinroPlayer in state)
-        if (jinroPlayer.id == jinroPlayerState.id)
+        if (jinroPlayer.playerId == jinroPlayerState.playerId)
           JinroPlayerState(
-            id: id,
+            playerId: playerId,
             playerName: playerName,
             thumbnail: thumbnail,
             voice: voice,
@@ -90,7 +90,7 @@ class JinroPlayerNotifier extends StateNotifier<List<JinroPlayerState>>{
 
 class JinroPlayerState{
   JinroPlayerState({  // Constructor
-    this.id = '0',    // Updated with uid
+    this.playerId = '0',    // Updated with uid
     this.playerName = 'ゲスト',
     this.thumbnail = 'assets/images/boshuchu.jpg',
     this.voice = 'sounds/wakoyubi.mp3',
@@ -157,7 +157,7 @@ class JinroPlayerState{
       ),
     );
   }
-  String id;          // uid
+  String playerId;          // uid
   String playerName;  // Player name
   String thumbnail;   // File path of player thumbnail
   String voice;       // File path of player voice

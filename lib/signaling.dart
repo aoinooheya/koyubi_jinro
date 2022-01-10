@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
+import 'package:myapp/jinro_player.dart';
 
 typedef void StreamStateCallback(MediaStream stream);
 
@@ -23,8 +24,10 @@ class Signaling {
   StreamStateCallback? onAddRemoteStream;
 
   Future<String> createRoom(
-    String roomIdDefined, MediaStream localStream, RTCVideoRenderer remoteRenderer
+    // String roomIdDefined, MediaStream localStream, RTCVideoRenderer remoteRenderer
+    String roomIdDefined, List<JinroPlayerState> jinroPlayerList, JinroPlayerListNotifier jinroPlayerListNotifier
   ) async {
+    String? playerIdCallee;
     FirebaseFirestore db = FirebaseFirestore.instance;
     DocumentReference roomRef;
 
@@ -37,16 +40,16 @@ class Signaling {
 
     // print('Create PeerConnection with configuration: $configuration');
     peerConnection = await createPeerConnection(configuration);
-
     registerPeerConnectionListeners();
-
-    localStream.getTracks().forEach((track) {
-      peerConnection?.addTrack(track, localStream);
+    // localStream.getTracks().forEach((track) {
+    //   peerConnection?.addTrack(track, localStream);
+    // });
+    jinroPlayerList[0].stream!.getTracks().forEach((track) {
+      peerConnection?.addTrack(track, jinroPlayerList[0].stream!);
     });
 
     // Code for collecting ICE candidates below
     var callerCandidatesCollection = roomRef.collection('callerCandidates');
-
     peerConnection?.onIceCandidate = (RTCIceCandidate candidate) {
       // print('Got candidate: ${candidate.toMap()}');
       // Add ICE candidates to Firebase
@@ -59,13 +62,16 @@ class Signaling {
     await peerConnection!.setLocalDescription(offer);
     // print('Created offer: $offer');
 
-    // Create a room
+    // Set 'offer' to Firestore
     Map<String, dynamic> roomWithOffer = {'offer': offer.toMap()};
     await roomRef.set(roomWithOffer);
     var roomId = roomRef.id;
     print('New room created with SDK offer. Room ID: $roomId');
 
-    // Listening for remote session description (SDP)
+    // Update Firestore with 'playerIdCaller'
+    await roomRef.update({'playerIdCaller' : jinroPlayerList[0].playerId});
+
+    // Listening for remote session description (SDP) & playerIdCallee
     roomRef.snapshots().listen((snapshot) async {
       // print('Got updated room: ${snapshot.data()}');
       Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
@@ -76,6 +82,9 @@ class Signaling {
           data['answer']['type'],
         );
         print("Someone tried to connect");
+        // Get playerIdCallee
+        playerIdCallee = data['playerIdCallee'];
+        print('playerIdCallee = $playerIdCallee');
         // Set remote SDP to peerConnection
         await peerConnection?.setRemoteDescription(answer);
       }
@@ -86,7 +95,6 @@ class Signaling {
 
     peerConnection?.onTrack = (RTCTrackEvent event) {
       print('Got remote track: ${event.streams[0]}');
-
       event.streams[0].getTracks().forEach((track) {
         // print('Add a track to the remoteStream $track');
         remoteStream?.addTrack(track);
@@ -110,17 +118,24 @@ class Signaling {
         }
       });
     });
-    // Listen for remote ICE candidates above
 
+    // Map<String, dynamic> result = {
+    //   'roomId' : roomId,
+    //   'playerIdCallee' : playerIdCallee ?? 'null'
+    // };
+    // return result;
     return roomId;
   }
 
-  Future<void> joinRoom(
-    String roomId, MediaStream localStream, RTCVideoRenderer remoteVideo
+  // Future<void> joinRoom(
+  Future<String> joinRoom(
+    // String roomId, MediaStream localStream, RTCVideoRenderer remoteVideo
+    String roomId, List<JinroPlayerState> jinroPlayerList, JinroPlayerListNotifier jinroPlayerListNotifier
   ) async {
+    String? playerIdCaller;
     // Get room
     FirebaseFirestore db = FirebaseFirestore.instance;
-    DocumentReference roomRef = db.collection('rooms').doc('$roomId');
+    DocumentReference roomRef = db.collection('rooms').doc(roomId);
     var roomSnapshot = await roomRef.get();
     print('Got room ${roomSnapshot.exists}');
 
@@ -132,8 +147,8 @@ class Signaling {
       registerPeerConnectionListeners();
 
       // Sending my stream to the other person (Google server?)
-      localStream.getTracks().forEach((track) {
-        peerConnection?.addTrack(track, localStream);
+      jinroPlayerList[0].stream!.getTracks().forEach((track) {
+        peerConnection?.addTrack(track, jinroPlayerList[0].stream!);
       });
 
       // Code for collecting ICE candidates below
@@ -146,7 +161,6 @@ class Signaling {
         // print('onIceCandidate: ${candidate.toMap()}');
         calleeCandidatesCollection.add(candidate.toMap());
       };
-      // Code for collecting ICE candidate above
 
       // Receiving the other person's stream?
       peerConnection?.onTrack = (RTCTrackEvent event) {
@@ -166,15 +180,19 @@ class Signaling {
       );
       var answer = await peerConnection!.createAnswer();
       // print('Created Answer $answer');
-
       await peerConnection!.setLocalDescription(answer);
-
       Map<String, dynamic> roomWithAnswer = {
         'answer': {'type': answer.type, 'sdp': answer.sdp}
       };
-
-      await roomRef.update(roomWithAnswer);
       // Finished creating SDP answer
+
+      // Get playerIdCaller
+      playerIdCaller = data['playerIdCaller'];
+      print('playerIdCaller = $playerIdCaller');
+
+      // Update Firestore with 'answer' & 'playerIdCallee'
+      await roomRef.update(roomWithAnswer);
+      await roomRef.update({'playerIdCallee' : jinroPlayerList[0].playerId});
 
       // Listening for remote ICE candidates below
       roomRef.collection('callerCandidates').snapshots().listen((snapshot) {
@@ -192,6 +210,7 @@ class Signaling {
         });
       });
     }
+    return playerIdCaller ?? 'null';
   }
 
   Future<void> initializeRemoteStream(
