@@ -233,7 +233,7 @@ class MyHomePage extends HookConsumerWidget {
 }
 
 ////////////////////////////////////////////////////
-// // main
+// // main Firebase
 // Future<void> main() async {
 //   WidgetsFlutterBinding.ensureInitialized();
 //   await Firebase.initializeApp(

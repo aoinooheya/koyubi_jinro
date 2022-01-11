@@ -3,6 +3,8 @@ import 'dart:async';
 
 // Timer
 class ClockTimer extends StatefulWidget{
+  const ClockTimer({Key? key}) : super(key: key);
+
   @override
   State<StatefulWidget> createState(){
     return _ClockTimerState();
@@ -20,11 +22,11 @@ class _ClockTimerState extends State<ClockTimer>{
 
   @override
   void _onTimer(Timer timer){
-    setState(() => {
-      if (_time > 0){
-        _time--
-      }
-    });
+    if (_time > 0){
+      setState(() => {
+      _time--
+      });
+    }
   }
 
   @override

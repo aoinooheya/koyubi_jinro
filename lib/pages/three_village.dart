@@ -1,53 +1,30 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:myapp/timer.dart';
-import 'package:flutter_webrtc/flutter_webrtc.dart';
 import '../signaling.dart';
 import '../jinro_player.dart';
 
 class ThreeVillage extends HookConsumerWidget {
   ThreeVillage({Key? key}) : super(key: key);
 
-  final bool micOn = false;
   final Signaling signaling = Signaling();
-  // late Map<String, String> result;
   late final String? roomId;
   final TextEditingController textEditingControllerCreate = TextEditingController(text: '');
   final TextEditingController textEditingControllerJoin = TextEditingController(text: '');
-  // late Map<String, dynamic> result;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final jinroPlayerList = ref.watch(jinroPlayerListNotifierProvider);
     final jinroPlayerListNotifier = ref.watch(jinroPlayerListNotifierProvider.notifier);
-    useEffect((){
-      signaling.initializeRemoteStream(jinroPlayerList[1].renderer);
-
-      // When we get remote stream, set to masyu??
-      signaling.onAddRemoteStream = ((stream) async {
-        // Wait for initialization of playerIdRemote (Should use listen??)
-        await Future.delayed(const Duration(seconds: 1));
-        jinroPlayerListNotifier.copyWith(
-          jinroPlayerState: jinroPlayerList[1],
-          // playerId: playerIdRemote,
-          stream: stream,
-          iconIndex: iconView.video.index,
-        );
-        print('masyu = onAddRemoteStream');
-        print('masyu.renderer.srcObject = ${jinroPlayerList[1].renderer.srcObject}');
-      });
-      return null;
-    }, const []);
     print('masyu.playerId@build = ${jinroPlayerList[1].playerId}');
     return Scaffold(
       appBar: AppBar(
-          title: Row(
-            children: <Widget>[
-              const Text('13人村・。・　残り時間：'),
-              ClockTimer(),
-            ],
-          )
+        title: Row(
+          children: const <Widget>[
+            Text('13人村・。・　残り時間：'),
+            ClockTimer(),
+          ],
+        )
       ),
       body: Center(
         child: Column(
@@ -62,31 +39,26 @@ class ThreeVillage extends HookConsumerWidget {
             ),
             Wrap(
               children: <Widget>[
+                // Create room
                 ElevatedButton(
                   onPressed: () async {
-                    // result = await signaling.createRoom(
                     roomId = await signaling.createRoom(
                       textEditingControllerCreate.text,
                       jinroPlayerList,
                       jinroPlayerListNotifier
                     );
-                    // roomId = result['roomId'];
-                    // playerIdRemote = result['playerIdCallee']!;
                     textEditingControllerCreate.text = roomId!;
                   },
-                  // print('playerIdCallee@create = $playerIdRemote');
                   child: const Text("Create room"),
                 ),
+                // Join room
                 ElevatedButton(
                   onPressed: () {
-                    // Add roomId
-                    // playerIdRemote = await signaling.joinRoom(
                     signaling.joinRoom(
                       textEditingControllerJoin.text,
                       jinroPlayerList,
                       jinroPlayerListNotifier,
                     );
-                    // print('playerIdRemote@return = $playerIdRemote');
                   },
                   child: const Text("Join room"),
                 ),
