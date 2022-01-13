@@ -122,9 +122,11 @@ class JinroPlayerState{
           IndexedStack(
             index: iconIndex,
             children: <Widget>[
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8.0),
-                child: Image.network(thumbnail),
+              Center(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8.0),
+                  child: Image.network(thumbnail),
+                ),
               ),
               this.view,
             ],

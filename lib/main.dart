@@ -1,14 +1,21 @@
+import 'dart:convert';
+// import 'dart:html';
+import 'dart:io';
+
 import 'package:audioplayers/audioplayers.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:myapp/jinro_player.dart';
 import 'package:myapp/pages/next_page.dart';
 import 'package:myapp/util_firebase.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:twitter_login/twitter_login.dart';
 
 final infoTextProvider = StateProvider((ref) => '');
@@ -17,10 +24,13 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: const FirebaseOptions(
-        apiKey: "AIzaSyC2NMnW6VHDEBjdr1y7-F-MBLu2iv8kd9E",
-        appId: "1:420630967339:web:b3f404144679c775b9e66e",
-        messagingSenderId: "G-LWJ1LB946C",
-        projectId: "koyubijinro"
+      apiKey: "AIzaSyC2NMnW6VHDEBjdr1y7-F-MBLu2iv8kd9E",
+      authDomain: "koyubijinro.firebaseapp.com",
+      projectId: "koyubijinro",
+      storageBucket: "koyubijinro.appspot.com",
+      messagingSenderId: "420630967339",
+      appId: "1:420630967339:web:b3f404144679c775b9e66e",
+      measurementId: "G-LWJ1LB946C"
     )
   );
   runApp(const ProviderScope(child: MyApp()));
@@ -254,74 +264,151 @@ class MyHomePage extends HookConsumerWidget {
 //     return MaterialApp(
 //       title: 'debug',
 //       theme: ThemeData(primarySwatch: Colors.blue),
-//       home: const View(),
+//       home: View(),
 //     );
 //   }
 // }
 //
 // class View extends HookConsumerWidget{
-//   const View({Key? key}) : super(key: key);
-//
-//   // Future<void> updateIconByLoginWithMediaAccess(
-//   //     JinroPlayerState jinroPlayer,
-//   //     JinroPlayerNotifier jinroPlayerNotifier
-//   // ) async {
-//   //   jinroPlayerNotifier.copyWith(
-//   //     jinroPlayerState: jinroPlayer,
-//   //     playerId: FirebaseAuth.instance.currentUser!.uid,
-//   //     playerName: FirebaseAuth.instance.currentUser!.displayName,
-//   //     thumbnail: FirebaseAuth.instance.currentUser!.photoURL,
-//   //   );
-//   // }
+//   View({Key? key}) : super(key: key);
 //   @override
 //   Widget build(BuildContext context, WidgetRef ref) {
-//     final jinroPlayerList = ref.watch(jinroPlayerProvider);
-//     final jinroPlayerNotifier = ref.watch(jinroPlayerProvider.notifier);
 //     return Scaffold(
 //       body: Center(
 //         child: Column(
 //           children: <Widget>[
 //             ElevatedButton(
-//                 onPressed: () {
-//                   jinroPlayerNotifier.copyWith(
-//                     jinroPlayerState: jinroPlayerList[1],
-//                     playerId: 'debug'
-//                   );
-//                 },
-//                 child: Text(jinroPlayerList[1].playerId)
+//               onPressed: () {
+//               },
+//               child: Text('')
 //             ) ,
-//             // Sign in anonymously
-//             // ElevatedButton(
-//             //   onPressed: () async {
-//             //     await FirebaseAuth.instance.signInAnonymously();
-//             //     updateIconByLoginWithMediaAccess(jinroPlayerList[0], jinroPlayerNotifier);
-//             //   },
-//             //   child: Text(jinroPlayerList[0].playerId)
-//             // ) ,
-//             // Google sign in
-//             // ElevatedButton(
-//             //   onPressed: () async {
-//             //     try {
-//             //       final GoogleSignInAccount? googleUser = await GoogleSignIn()
-//             //           .signIn();
-//             //       final GoogleSignInAuthentication? googleAuth = await googleUser
-//             //           ?.authentication;
-//             //       final credential = GoogleAuthProvider.credential(
-//             //         accessToken: googleAuth?.accessToken,
-//             //         idToken: googleAuth?.idToken,
-//             //       );
-//             //       await FirebaseAuth.instance.signInWithCredential(credential);
-//             //       updateIconByLoginWithMediaAccess(
-//             //           jinroPlayerList[0], jinroPlayerNotifier);
-//             //       // Navigator.push(context, MaterialPageRoute(builder: (context) => NextPage()));
-//             //     } catch (e){
-//             //     }
-//             //   },
-//             //   child: Text(jinroPlayerList[0].playerId)
-//             // ),
 //           ]
 //         )
 //       )
+//     );
+//   }
+// }
+//////////////////////////////////////
+// main Image Uplaod
+// Future<void> main() async {
+//   WidgetsFlutterBinding.ensureInitialized();
+//   await Firebase.initializeApp(
+//     options: const FirebaseOptions(
+//       apiKey: "AIzaSyC2NMnW6VHDEBjdr1y7-F-MBLu2iv8kd9E",
+//       authDomain: "koyubijinro.firebaseapp.com",
+//       projectId: "koyubijinro",
+//       storageBucket: "koyubijinro.appspot.com",
+//       messagingSenderId: "420630967339",
+//       appId: "1:420630967339:web:b3f404144679c775b9e66e",
+//       measurementId: "G-LWJ1LB946C"
+//     )
+//   );
+//
+//   runApp(const MyApp());
+// }
+//
+// class MyApp extends StatelessWidget {
+//   const MyApp({Key? key}) : super(key: key);
+//   @override
+//   Widget build(BuildContext context) {
+//     return MaterialApp(
+//       title: 'Flutter Demo',
+//       theme: ThemeData(
+//         primarySwatch: Colors.blue,
+//         visualDensity: VisualDensity.adaptivePlatformDensity,
+//       ),
+//       home: const MyHomePage(),
+//     );
+//   }
+// }
+//
+// class MyHomePage extends StatefulWidget {
+//   const MyHomePage({Key? key}) : super(key: key);
+//   @override
+//   _MyHomePageState createState() => _MyHomePageState();
+// }
+//
+// class _MyHomePageState extends State<MyHomePage> {
+//   Image? _img;
+//   Text? _text;
+//
+//   Future<void> _download() async {
+//     FirebaseStorage storage = FirebaseStorage.instance;
+//     print('Here0');
+//
+//     // テキスト
+//     // Reference textRef = storage.ref("DL/hello.txt");
+//     // var data = await textRef.getData();
+//     // print('Here1');
+//
+//     // 画像
+//     // Reference imageRef = storage.ref("DL/icon.png");
+//     Reference imageRef = storage.ref("UL/upload-pic.png");
+//     String imageUrl = await imageRef.getDownloadURL();
+//     print('Here2');
+//
+//     // 画面に反映
+//     setState(() {
+//       _img = Image.network(imageUrl);
+//       // _text = Text(ascii.decode(data!));
+//     });
+//     print('Here3');
+//
+//     // Save locally
+//     // Directory appDocDir = await getApplicationDocumentsDirectory();
+//     // File downloadToFile = File("${appDocDir.path}/download-logo.png");
+//     // try {
+//     //   await imageRef.writeToFile(downloadToFile);
+//     // } catch (e) {
+//     //   print(e);
+//     // }
+//   }
+//
+//   void _upload() async {
+//     // imagePickerで画像を選択する
+//     XFile? pickerFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+//     if (pickerFile != null) {
+//       print('Full path = ${pickerFile.path}');
+//       try {
+//         await FirebaseStorage.instance.ref("UL/upload-pic.png").putData(await pickerFile.readAsBytes());
+//       } catch (e) {
+//         print(e);
+//       }
+//     }
+//   }
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       body: Center(
+//         child: Column(
+//           mainAxisAlignment: MainAxisAlignment.center,
+//           children: <Widget>[
+//             if (_text != null) _text!,
+//             if (_img != null) _img!,
+//           ],
+//         ),
+//       ),
+//       floatingActionButton:
+//       Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+//         FloatingActionButton(
+//           onPressed: _download,
+//           child: const Icon(Icons.download_outlined),
+//         ),
+//         FloatingActionButton(
+//           onPressed: _upload,
+//           child: const Icon(Icons.upload_outlined),
+//         ),
+//         FloatingActionButton(
+//           onPressed: () async {
+//             ListResult result = await FirebaseStorage.instance.ref().listAll();
+//             for (var ref in result.prefixes) {
+//               print('list = $ref');
+//             }
+//           },
+//           child: const Icon(Icons.upload),
+//         ),
+//       ])
 //     );
 //   }
 // }

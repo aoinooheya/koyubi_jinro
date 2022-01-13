@@ -35,9 +35,11 @@ class Signaling {
     String roomId = roomRef.id;
     print('New room created with SDK offer. Room ID: $roomId');
 
+    // Create PeerConnection
     print('Create PeerConnection with configuration: $configuration');
     peerConnection = await createPeerConnection(configuration);
     registerPeerConnectionListeners(roomId, 'playerIdCallee', jinroPlayerList, jinroPlayerListNotifier);
+
     // Add local stream tracks (Audio&Video) to peerConnection
     jinroPlayerList[0].stream!.getTracks().forEach((track) {
       peerConnection?.addTrack(track, jinroPlayerList[0].stream!);
@@ -100,7 +102,7 @@ class Signaling {
       snapshot.docChanges.forEach((change) {
         if (change.type == DocumentChangeType.added) {
           Map<String, dynamic> data = change.doc.data() as Map<String, dynamic>;
-          print('Got new remote ICE candidate');
+          // print('Got new remote ICE candidate');
           // Add remote ICE candidate to peerConnection
           peerConnection!.addCandidate(
             RTCIceCandidate(
