@@ -117,7 +117,8 @@ class Signaling {
     String roomId, List<JinroPlayerState> jinroPlayerList, JinroPlayerListNotifier jinroPlayerListNotifier
   ) async {
     /// Get room
-    DocumentReference roomRef = FirebaseFirestore.instance.collection('rooms').doc(roomId);
+    DocumentReference roomRef = FirebaseFirestore.instance.
+      collection('rooms').doc(roomId);
     var roomSnapshot = await roomRef.get();
     print('Got room ${roomSnapshot.exists}');
 
@@ -249,22 +250,28 @@ class Signaling {
       var userSnapshot = await FirebaseFirestore.instance.collection('users').
         doc(playerId).get();
       /// If the user exists
-      print("$playerIdField = $playerId!!!!");
-      print("userSnapshot.exists = ${userSnapshot.exists}!!!!");
       if (userSnapshot.exists){
         Map<String, dynamic> userData = userSnapshot.data() as Map<String, dynamic>;
         String playerName = userData['playerName'];
         String thumbnail = userData['thumbnail'];
         String voice = userData['voice'];
-        jinroPlayerListNotifier.copyWith(
-          jinroPlayerState: jinroPlayerList[1],
+        // jinroPlayerListNotifier.copyWith(
+        //   jinroPlayerState: jinroPlayerList[1],
+        //   playerId: playerId,
+        //   playerName: playerName,
+        //   thumbnail: thumbnail,
+        //   voice: voice,
+        //   stream: stream,
+        //   iconIndex: iconView.video.index,
+        // );
+        jinroPlayerListNotifier.add(JinroPlayerState(
           playerId: playerId,
           playerName: playerName,
           thumbnail: thumbnail,
           voice: voice,
           stream: stream,
           iconIndex: iconView.video.index,
-        );
+        ));
       }
     };
   }

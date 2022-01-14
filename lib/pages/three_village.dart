@@ -155,14 +155,17 @@ class ThreeVillage extends HookConsumerWidget {
             child: const Icon(Icons.refresh),
             onPressed: (){
               /// Listen for Firestore iconIndex
-              FirebaseFirestore.instance.collection('users').doc(jinroPlayerList[1].playerId).snapshots().listen((snapshot) {
-                Map<String, dynamic> userData = snapshot.data() as Map<String, dynamic>;
-                int iconIndex = userData['iconIndex'];
-                jinroPlayerListNotifier.copyWith(
-                  jinroPlayerState: jinroPlayerList[1],
-                  iconIndex: iconIndex,
-                );
-              });
+              for (final jinroPlayer in jinroPlayerList){
+                FirebaseFirestore.instance.collection('users').
+                  doc(jinroPlayer.playerId).snapshots().listen((snapshot) {
+                    Map<String, dynamic> userData = snapshot.data() as Map<String, dynamic>;
+                    int iconIndex = userData['iconIndex'];
+                    jinroPlayerListNotifier.copyWith(
+                      jinroPlayerState: jinroPlayer,
+                      iconIndex: iconIndex,
+                    );
+                });
+              }
             },
           ),
         ],

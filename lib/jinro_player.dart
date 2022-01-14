@@ -86,6 +86,10 @@ class JinroPlayerListNotifier extends StateNotifier<List<JinroPlayerState>>{
           jinroPlayer,
     ];
   }
+
+  void add(JinroPlayerState jinroPlayerState){
+    state = [...state, jinroPlayerState];
+  }
 }
 
 class JinroPlayerState{
