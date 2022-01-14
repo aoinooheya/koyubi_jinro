@@ -3,20 +3,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 
-// Index for switching icon view (0 is thumbnail, 1 is video)
+/// Index for switching icon view (0 is thumbnail, 1 is video)
 enum iconView {
-  thumbnail,  // index = 0
-  video,      // index = 1
+  thumbnail,  /// index = 0
+  video,      /// index = 1
 }
 
-// Riverpod (List of JinroPlayerState)
+/// Riverpod (List of JinroPlayerState)
 final jinroPlayerListNotifierProvider =
   StateNotifierProvider<JinroPlayerListNotifier, List<JinroPlayerState>>(
   (ref) => JinroPlayerListNotifier());
 
 class JinroPlayerListNotifier extends StateNotifier<List<JinroPlayerState>>{
   JinroPlayerListNotifier(): super([
-    JinroPlayerState(), // It's you! (id=0)
+    JinroPlayerState(), /// It's you! (id=0)
     JinroPlayerState(
       playerId: '1',
       playerName: 'masyu',
@@ -65,7 +65,7 @@ class JinroPlayerListNotifier extends StateNotifier<List<JinroPlayerState>>{
     voice ??= jinroPlayerState.voice;
     stream ??= jinroPlayerState.stream;
     renderer ??= jinroPlayerState.renderer;
-    view ??= jinroPlayerState.view;  // Used for mirror the view
+    view ??= jinroPlayerState.view;  /// Used for mirror the view
     iconIndex ??= jinroPlayerState.iconIndex;
     isMute ??= jinroPlayerState.isMute;
     state = [
@@ -89,19 +89,21 @@ class JinroPlayerListNotifier extends StateNotifier<List<JinroPlayerState>>{
 }
 
 class JinroPlayerState{
-  JinroPlayerState({  // Constructor
-    this.playerId = '0',    // Updated with uid
+  JinroPlayerState({      /// Constructor
+    this.playerId = '0',  /// Updated with uid
     this.playerName = 'ゲスト',
     this.thumbnail = 'assets/images/boshuchu.jpg',
     this.voice = 'sounds/wakoyubi.mp3',
     this.stream,
     RTCVideoRenderer? renderer,
     RTCVideoView? view,
-    this.iconIndex = 0, // iconView = thumbnail
+    this.iconIndex = 0,   /// iconView = thumbnail
     this.isMute = true,
   }){
     renderer == null ? this.renderer.initialize() : this.renderer = renderer;
-    this.renderer.srcObject = stream;
+    if (stream != null) {
+      this.renderer.srcObject = stream;
+    }
     view == null ? this.view = RTCVideoView(this.renderer) : this.view = view;
     playerIcon = Container(
       width: 100, height: 100, margin: const EdgeInsets.all(5),
@@ -132,7 +134,7 @@ class JinroPlayerState{
             ],
           ),
           Column(
-            // Print player's name
+            /// Print player's name
             mainAxisAlignment: MainAxisAlignment.end,
             children: <Widget>[
               Container(
@@ -159,14 +161,14 @@ class JinroPlayerState{
       ),
     );
   }
-  String playerId;          // uid
-  String playerName;  // Player name
-  String thumbnail;   // File path of player thumbnail
-  String voice;       // File path of player voice
+  String playerId;    /// uid
+  String playerName;  /// Player name
+  String thumbnail;   /// File path of player thumbnail
+  String voice;       /// File path of player voice
   MediaStream? stream;
   RTCVideoRenderer renderer = RTCVideoRenderer();
-  late RTCVideoView view; // Own video
-  int iconIndex;  // Index for switching icon view (0 is thumbnail, 1 is video)
+  late RTCVideoView view; /// Own video
+  int iconIndex;  /// Index for switching icon view (0 is thumbnail, 1 is video)
   bool isMute;
 
   final _audio = AudioCache();

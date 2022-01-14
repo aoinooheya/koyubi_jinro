@@ -17,7 +17,7 @@ class NextPage extends HookConsumerWidget{
 
     return Scaffold(
       appBar: AppBar(
-        // Sign out
+        /// Sign out
         leading: IconButton(
           icon: const Icon(Icons.logout),
           onPressed: () async {
@@ -50,7 +50,6 @@ class NextPage extends HookConsumerWidget{
               child: ElevatedButton(
                   onPressed: (){
                     _audio.play('sounds/onegaishimasu.mp3');
-                    // Temporarily moves to ThirteenVillage
                     Navigator.push(context, MaterialPageRoute(builder: (context) => ThreeVillage()));
                   },
                   child: const Text('3人村')),

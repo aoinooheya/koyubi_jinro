@@ -1,8 +1,10 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:myapp/timer.dart';
 import '../signaling.dart';
 import '../jinro_player.dart';
+import '../util_firebase.dart';
 
 class ThreeVillage extends HookConsumerWidget {
   ThreeVillage({Key? key}) : super(key: key);
@@ -11,12 +13,12 @@ class ThreeVillage extends HookConsumerWidget {
   late final String? roomId;
   final TextEditingController textEditingControllerCreate = TextEditingController(text: '');
   final TextEditingController textEditingControllerJoin = TextEditingController(text: '');
+  final UtilFirebase utilFirebase = UtilFirebase();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final jinroPlayerList = ref.watch(jinroPlayerListNotifierProvider);
     final jinroPlayerListNotifier = ref.watch(jinroPlayerListNotifierProvider.notifier);
-    print('masyu.playerId@build = ${jinroPlayerList[1].playerId}');
     return Scaffold(
       appBar: AppBar(
         title: Row(
@@ -32,14 +34,14 @@ class ThreeVillage extends HookConsumerWidget {
           children: [
             Wrap(
               children: <Widget>[
-                // Display player icons
+                /// Display player icons
                 for (final jinroPlayer in jinroPlayerList)
                   jinroPlayer.playerIcon,
               ]
             ),
             Wrap(
               children: <Widget>[
-                // Create room
+                /// Create room
                 ElevatedButton(
                   onPressed: () async {
                     roomId = await signaling.createRoom(
@@ -51,7 +53,7 @@ class ThreeVillage extends HookConsumerWidget {
                   },
                   child: const Text("Create room"),
                 ),
-                // Join room
+                /// Join room
                 ElevatedButton(
                   onPressed: () {
                     signaling.joinRoom(
@@ -91,14 +93,14 @@ class ThreeVillage extends HookConsumerWidget {
         verticalDirection: VerticalDirection.up,
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Mic
+          /// Mic
           FloatingActionButton(
             heroTag: "mic",
             child: Icon(
               jinroPlayerList[0].isMute == true ?
                 Icons.mic_off : Icons.mic
             ),
-            // Switch the mic on/off
+            /// Switch the mic on/off
             onPressed: () {
               if (jinroPlayerList[0].isMute == true){
                 jinroPlayerList[0].stream?.getAudioTracks()[0].enabled = true;
@@ -107,7 +109,7 @@ class ThreeVillage extends HookConsumerWidget {
                     stream: jinroPlayerList[0].stream,
                     isMute: false,
                 );
-              } else {  // isMute == false
+              } else {  /// isMute == false
                 jinroPlayerList[0].stream?.getAudioTracks()[0].enabled = false;
                 jinroPlayerListNotifier.copyWith(
                     jinroPlayerState: jinroPlayerList[0],
@@ -118,14 +120,14 @@ class ThreeVillage extends HookConsumerWidget {
             }
           ),
           const SizedBox(height: 5),
-          // Video
+          /// Video
           FloatingActionButton(
             heroTag: "video",
             child: Icon(
               jinroPlayerList[0].iconIndex == iconView.thumbnail.index ?
                 Icons.videocam_off : Icons.videocam
             ),
-            // Switch the camera on/off
+            /// Switch the camera on/off
             onPressed: (){
               if (jinroPlayerList[0].iconIndex == iconView.thumbnail.index){
                 jinroPlayerList[0].stream?.getVideoTracks()[0].enabled = true;
@@ -134,6 +136,7 @@ class ThreeVillage extends HookConsumerWidget {
                   stream: jinroPlayerList[0].stream,
                   iconIndex: iconView.video.index
                 );
+                utilFirebase.updateFirestore(jinroPlayer: jinroPlayerList[0], iconIndex: iconView.video.index);
               } else if (jinroPlayerList[0].iconIndex == iconView.video.index) {
                 jinroPlayerList[0].stream?.getVideoTracks()[0].enabled = false;
                 jinroPlayerListNotifier.copyWith(
@@ -141,10 +144,27 @@ class ThreeVillage extends HookConsumerWidget {
                   stream: jinroPlayerList[0].stream,
                   iconIndex: iconView.thumbnail.index
                 );
+                utilFirebase.updateFirestore(jinroPlayer: jinroPlayerList[0], iconIndex: iconView.thumbnail.index);
               }
             },
           ),
-          // Camera End
+          const SizedBox(height: 5),
+          /// Refresh
+          FloatingActionButton(
+            heroTag: "refresh",
+            child: const Icon(Icons.refresh),
+            onPressed: (){
+              /// Listen for Firestore iconIndex
+              FirebaseFirestore.instance.collection('users').doc(jinroPlayerList[1].playerId).snapshots().listen((snapshot) {
+                Map<String, dynamic> userData = snapshot.data() as Map<String, dynamic>;
+                int iconIndex = userData['iconIndex'];
+                jinroPlayerListNotifier.copyWith(
+                  jinroPlayerState: jinroPlayerList[1],
+                  iconIndex: iconIndex,
+                );
+              });
+            },
+          ),
         ],
       ),
     );

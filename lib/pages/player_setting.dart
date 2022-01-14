@@ -25,7 +25,7 @@ class PlayerSetting extends HookConsumerWidget{
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             jinroPlayerList[0].playerIcon,
-            // Change player's name
+            /// Change player's name
             SizedBox(
               width: 130,
               child: TextFormField(
@@ -43,7 +43,7 @@ class PlayerSetting extends HookConsumerWidget{
                   jinroPlayerListNotifier.copyWith(
                     jinroPlayerState: jinroPlayerList[0], playerName: nameField.text
                   );
-                  // Update Firestore
+                  /// Update Firestore
                   utilFirebase.updateFirestore(
                       jinroPlayer: jinroPlayerList[0],
                       playeName: nameField.text,
@@ -52,27 +52,27 @@ class PlayerSetting extends HookConsumerWidget{
                 child: const Text('名前変更')),
             ),
             const SizedBox(height: 8),
-            // Change thumbnail
+            /// Change thumbnail
             SizedBox(
               width: 120,
               child: ElevatedButton(
                 onPressed: () async {
                   Reference thumbnailRef = FirebaseStorage.instance.
                     ref('thumbnail/${FirebaseAuth.instance.currentUser!.uid}.png');
-                  // Pick thumbnail
+                  /// Pick thumbnail
                   XFile? pickerFile = await ImagePicker().pickImage(source: ImageSource.gallery);
                   if (pickerFile != null) {
                     try {
-                      // Upload thumbnail
+                      /// Upload thumbnail
                       await thumbnailRef.putData(await pickerFile.readAsBytes());
                     } catch (e) {
                       print(e);
                     }
                   }
-                  // copyWith
+                  /// copyWith
                   String thumbnailUrl = await thumbnailRef.getDownloadURL();
                   jinroPlayerListNotifier.copyWith(jinroPlayerState: jinroPlayerList[0], thumbnail: thumbnailUrl);
-                  // Update Firestore
+                  /// Update Firestore
                   utilFirebase.updateFirestore(
                     jinroPlayer: jinroPlayerList[0],
                     thumbnail: thumbnailUrl,

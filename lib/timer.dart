@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 
-// Timer
+/// Timer
 class ClockTimer extends StatefulWidget{
   const ClockTimer({Key? key}) : super(key: key);
 

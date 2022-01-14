@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:myapp/jinro_player.dart';
@@ -23,10 +22,9 @@ class Signaling {
   Future<String> createRoom(
     String roomIdDefined, List<JinroPlayerState> jinroPlayerList, JinroPlayerListNotifier jinroPlayerListNotifier
   ) async {
-    String? playerIdCallee;
     DocumentReference roomRef;
 
-    // Create room in Firestore
+    /// Create room in Firestore
     if(roomIdDefined==''){
       roomRef = FirebaseFirestore.instance.collection('rooms').doc();
     } else {
@@ -35,42 +33,42 @@ class Signaling {
     String roomId = roomRef.id;
     print('New room created with SDK offer. Room ID: $roomId');
 
-    // Create PeerConnection
+    /// Create PeerConnection
     print('Create PeerConnection with configuration: $configuration');
     peerConnection = await createPeerConnection(configuration);
     registerPeerConnectionListeners(roomId, 'playerIdCallee', jinroPlayerList, jinroPlayerListNotifier);
 
-    // Add local stream tracks (Audio&Video) to peerConnection
+    /// Add local stream tracks (Audio&Video) to peerConnection
     jinroPlayerList[0].stream!.getTracks().forEach((track) {
       peerConnection?.addTrack(track, jinroPlayerList[0].stream!);
       print('Add local stream track to peerConnection: $track');
     });
 
-    // Collect ICE candidates
+    /// Collect ICE candidates
     var callerCandidatesCollection = roomRef.collection('callerCandidates');
     peerConnection?.onIceCandidate = (RTCIceCandidate candidate) {
       // print('Got ICE candidate');
-      // Add ICE candidates to Firebase
+      /// Add ICE candidates to Firebase
       callerCandidatesCollection.add(candidate.toMap());
     };
 
-    // Create SDP and set to PeerConnection
+    /// Create SDP and set to PeerConnection
     RTCSessionDescription offer = await peerConnection!.createOffer();
     await peerConnection!.setLocalDescription(offer);
     print('Created offer');
 
-    // Set offer & playerIdCaller to Firestore
+    /// Set offer & playerIdCaller to Firestore
     Map<String, dynamic> roomWithOffer = {
       'offer': offer.toMap(),
       'playerIdCaller' : jinroPlayerList[0].playerId
     };
     await roomRef.set(roomWithOffer);
 
-    // Listening for remote session description (SDP) & playerIdCallee
+    /// Listening for remote session description (SDP) & playerIdCallee
     roomRef.snapshots().listen((snapshot) async {
       print('Got updated room');
       Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
-      // Get answer
+      /// Get answer
       if (peerConnection?.getRemoteDescription() != null &&
           data['answer'] != null) {
         var answer = RTCSessionDescription(
@@ -78,17 +76,14 @@ class Signaling {
           data['answer']['type'],
         );
         print("Someone tried to connect");
-        // Set remote SDP to peerConnection
+        /// Set remote SDP to peerConnection
         await peerConnection?.setRemoteDescription(answer);
-        // Get playerIdCallee
-        playerIdCallee = data['playerIdCallee'];
-        print('playerIdCallee = $playerIdCallee');
       }
     });
 
-    // => peerConnection?.onAddStream ("Add remote stream")
+    /// => peerConnection?.onAddStream ("Add remote stream")
 
-    // Get remote track
+    /// Get remote track
     peerConnection?.onTrack = (RTCTrackEvent event) {
       print('Got remote track: ${event.streams[0]}');
       event.streams[0].getTracks().forEach((track) {
@@ -97,7 +92,7 @@ class Signaling {
       });
     };
 
-    // Listen for remote Ice candidates below
+    /// Listen for remote Ice candidates below
     roomRef.collection('calleeCandidates').snapshots().listen((snapshot) {
       snapshot.docChanges.forEach((change) {
         if (change.type == DocumentChangeType.added) {
@@ -121,24 +116,23 @@ class Signaling {
   Future<void> joinRoom(
     String roomId, List<JinroPlayerState> jinroPlayerList, JinroPlayerListNotifier jinroPlayerListNotifier
   ) async {
-    String? playerIdCaller;
-    // Get room
+    /// Get room
     DocumentReference roomRef = FirebaseFirestore.instance.collection('rooms').doc(roomId);
     var roomSnapshot = await roomRef.get();
     print('Got room ${roomSnapshot.exists}');
 
-    // Create PeerConnection with Google server
+    /// Create PeerConnection with Google server
     if (roomSnapshot.exists) {
       print('Create PeerConnection with configuration: $configuration');
       peerConnection = await createPeerConnection(configuration);
       registerPeerConnectionListeners(roomId, 'playerIdCaller', jinroPlayerList, jinroPlayerListNotifier);
 
-      // Send my stream to the other person (Google server?)
+      /// Send my stream to the other person (Google server?)
       jinroPlayerList[0].stream!.getTracks().forEach((track) {
         peerConnection?.addTrack(track, jinroPlayerList[0].stream!);
       });
 
-      // Collect ICE candidates
+      /// Collect ICE candidates
       var calleeCandidatesCollection = roomRef.collection('calleeCandidates');
       peerConnection!.onIceCandidate = (RTCIceCandidate candidate) {
         if (candidate == null) {
@@ -149,7 +143,7 @@ class Signaling {
         calleeCandidatesCollection.add(candidate.toMap());
       };
 
-      // Receiving the other person's stream?
+      /// Receiving the other person's stream?
       peerConnection?.onTrack = (RTCTrackEvent event) {
         print('Got remote track: ${event.streams[0]}');
         event.streams[0].getTracks().forEach((track) {
@@ -158,30 +152,27 @@ class Signaling {
         });
       };
 
-      // Get offer from Firestore and set to peerConnection
+      /// Get offer from Firestore and set to peerConnection
       var data = roomSnapshot.data() as Map<String, dynamic>;
       print('Got offer from Firestore');
       var offer = data['offer'];
       await peerConnection?.setRemoteDescription(
         RTCSessionDescription(offer['sdp'], offer['type']),
       );
-      // Get playerIdCaller
-      playerIdCaller = data['playerIdCaller'];
-      print('playerIdCaller = $playerIdCaller');
 
-      // Create SDP answer and set to peerConnection
+      /// Create SDP answer and set to peerConnection
       var answer = await peerConnection!.createAnswer();
       print('Created Answer');
       await peerConnection!.setLocalDescription(answer);
 
-      // Update Firestore with 'answer' & 'playerIdCallee'
+      /// Update Firestore with 'answer' & 'playerIdCallee'
       Map<String, dynamic> roomWithAnswer = {
         'answer': {'type': answer.type, 'sdp': answer.sdp},
         'playerIdCallee' : jinroPlayerList[0].playerId
       };
       await roomRef.update(roomWithAnswer);
 
-      // Listening for remote ICE candidates
+      /// Listening for remote ICE candidates
       roomRef.collection('callerCandidates').snapshots().listen((snapshot) {
         snapshot.docChanges.forEach((document) {
           var data = document.doc.data() as Map<String, dynamic>;
@@ -227,7 +218,6 @@ class Signaling {
     remoteStream?.dispose();
   }
 
-  // void registerPeerConnectionListeners() {
   void registerPeerConnectionListeners(
     String? roomId,
     String playerIdField,
@@ -246,18 +236,19 @@ class Signaling {
     peerConnection?.onIceConnectionState = (RTCIceConnectionState state) {
       print('ICE connection state change: $state');
     };
-    // When peerConnection receives new stream & playerId
+
+    /// When peerConnection receives new stream & playerId
     peerConnection?.onAddStream = (MediaStream stream) async {
       print("Add remote stream (signaling peerConnection.onAddStream)");
-      // Get playerId from room
+      /// Get playerId from room
       var roomSnapshot = await FirebaseFirestore.instance.collection('rooms').
         doc(roomId).get();
       Map<String, dynamic> roomData = roomSnapshot.data() as Map<String, dynamic>;
       String playerId = roomData[playerIdField];
-      // Try to get the user
+      /// Try to get the user
       var userSnapshot = await FirebaseFirestore.instance.collection('users').
         doc(playerId).get();
-      // If the user exists
+      /// If the user exists
       print("$playerIdField = $playerId!!!!");
       print("userSnapshot.exists = ${userSnapshot.exists}!!!!");
       if (userSnapshot.exists){
@@ -274,7 +265,6 @@ class Signaling {
           stream: stream,
           iconIndex: iconView.video.index,
         );
-        print("Copying here!!!!");
       }
     };
   }

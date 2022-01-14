@@ -84,29 +84,29 @@ class MyHomePage extends HookConsumerWidget {
     String? playerName;
     String? thumbnail;
 
-    // Obtain access to UserMedia (Video & Audio)
+    /// Obtain access to UserMedia (Video & Audio)
     var stream = await navigator.mediaDevices
         .getUserMedia({'video': true, 'audio': true});
-    // Initially localStream is disabled
+    /// Initially localStream is disabled
     stream.getAudioTracks()[0].enabled = false;
     stream.getVideoTracks()[0].enabled = false;
 
-    // Try to get the user
+    /// Try to get the user
     var userSnapshot = await FirebaseFirestore.instance.collection('users').
       doc(FirebaseAuth.instance.currentUser!.uid).get();
-    // If the user exists
+    /// If the user exists
     if (userSnapshot.exists){
       var userData = userSnapshot.data() as Map<String, dynamic>;
       playerName = userData['playerName'];
       thumbnail = userData['thumbnail'];
     }
-    // If the user doesn't exist
+    /// If the user doesn't exist
     else {
       playerName = FirebaseAuth.instance.currentUser!.displayName;
       thumbnail = FirebaseAuth.instance.currentUser!.photoURL;
     }
 
-    // Update player icon
+    /// Update player icon
     jinroPlayerListNotifier.copyWith(
       jinroPlayerState: jinroPlayer,
       playerId: FirebaseAuth.instance.currentUser!.uid,
@@ -115,7 +115,7 @@ class MyHomePage extends HookConsumerWidget {
       stream: stream,
       view: RTCVideoView(jinroPlayer.renderer, mirror: true),
     );
-    // Update Firestore
+    /// Update Firestore
     utilFirebase.updateFirestore(
       jinroPlayer: jinroPlayer,
       playeName: playerName,
@@ -148,7 +148,7 @@ class MyHomePage extends HookConsumerWidget {
               style: Theme.of(context).textTheme.headline5,
             ),
             const SizedBox(height: 8),
-            // Sign in anonymously
+            /// Sign in anonymously
             ElevatedButton(
               onPressed: () async {
                 _audio.play('sounds/wakoyubi.mp3');
@@ -202,7 +202,7 @@ class MyHomePage extends HookConsumerWidget {
             //   child: const Text('メアドでログイン')
             // ),
             const SizedBox(height: 8),
-            // Google sign in
+            /// Google sign in
             ElevatedButton(
               onPressed: () async {
                 try {
