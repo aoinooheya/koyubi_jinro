@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:myapp/timer.dart';
 import '../signaling.dart';
 import '../jinro_player.dart';
@@ -21,6 +22,14 @@ class ThreeVillage extends HookConsumerWidget {
     final jinroPlayerListNotifier = ref.watch(jinroPlayerListNotifierProvider.notifier);
     return Scaffold(
       appBar: AppBar(
+        /// Hang up
+        leading: IconButton(
+          icon: const Icon(Icons.call_end),
+          onPressed: (){
+            signaling.hangUp(jinroPlayerList, jinroPlayerListNotifier);
+            Navigator.pop(context);
+          },
+        ),
         title: Row(
           children: const <Widget>[
             Text('13人村・。・　残り時間：'),
@@ -51,7 +60,7 @@ class ThreeVillage extends HookConsumerWidget {
                     );
                     textEditingControllerCreate.text = roomId!;
                   },
-                  child: const Text("Create room"),
+                  child: const Text("部屋を作成"),
                 ),
                 /// Join room
                 ElevatedButton(
@@ -62,13 +71,13 @@ class ThreeVillage extends HookConsumerWidget {
                       jinroPlayerListNotifier,
                     );
                   },
-                  child: const Text("Join room"),
+                  child: const Text("部屋に参加"),
                 ),
               ],
             ),
             Row(
               children: [
-                const Text("Create the following Room (Optional): "),
+                const Text("次の部屋を作成 (入力任意): "),
                 Flexible(
                   child: TextFormField(
                     controller: textEditingControllerCreate,
@@ -78,14 +87,14 @@ class ThreeVillage extends HookConsumerWidget {
             ),
             Row(
               children: [
-                const Text("Join the following Room: "),
+                const Text("次の部屋に参加: "),
                 Flexible(
                   child: TextFormField(
                     controller: textEditingControllerJoin,
                   ),
                 )
               ],
-            )
+            ),
           ],
         ),
       ),

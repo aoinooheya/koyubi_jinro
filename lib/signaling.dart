@@ -16,8 +16,8 @@ class Signaling {
     ]
   };
   RTCPeerConnection? peerConnection;
-  MediaStream? remoteStream;
-  String? roomId;
+  // MediaStream? remoteStream;
+  // String? roomId;
 
   Future<String> createRoom(
     String roomIdDefined, List<JinroPlayerState> jinroPlayerList, JinroPlayerListNotifier jinroPlayerListNotifier
@@ -83,14 +83,14 @@ class Signaling {
 
     /// => peerConnection?.onAddStream ("Add remote stream")
 
-    /// Get remote track
-    peerConnection?.onTrack = (RTCTrackEvent event) {
-      print('Got remote track: ${event.streams[0]}');
-      event.streams[0].getTracks().forEach((track) {
-        print('Add a track to the remoteStream $track');
-        remoteStream?.addTrack(track);
-      });
-    };
+    // /// Get remote track
+    // peerConnection?.onTrack = (RTCTrackEvent event) {
+    //   print('Got remote track: ${event.streams[0]}');
+    //   event.streams[0].getTracks().forEach((track) {
+    //     print('Add a track to the remoteStream $track');
+    //     remoteStream?.addTrack(track);
+    //   });
+    // };
 
     /// Listen for remote Ice candidates below
     roomRef.collection('calleeCandidates').snapshots().listen((snapshot) {
@@ -144,14 +144,14 @@ class Signaling {
         calleeCandidatesCollection.add(candidate.toMap());
       };
 
-      /// Receiving the other person's stream?
-      peerConnection?.onTrack = (RTCTrackEvent event) {
-        print('Got remote track: ${event.streams[0]}');
-        event.streams[0].getTracks().forEach((track) {
-          print('Add a track to the remoteStream: $track');
-          remoteStream?.addTrack(track);
-        });
-      };
+      // /// Receiving the other person's stream?
+      // peerConnection?.onTrack = (RTCTrackEvent event) {
+      //   print('Got remote track: ${event.streams[0]}');
+      //   event.streams[0].getTracks().forEach((track) {
+      //     print('Add a track to the remoteStream: $track');
+      //     remoteStream?.addTrack(track);
+      //   });
+      // };
 
       /// Get offer from Firestore and set to peerConnection
       var data = roomSnapshot.data() as Map<String, dynamic>;
@@ -191,32 +191,32 @@ class Signaling {
     }
   }
 
-  Future<void> hangUp(RTCVideoRenderer localVideo) async {
-    List<MediaStreamTrack> tracks = localVideo.srcObject!.getTracks();
-    tracks.forEach((track) {
-      track.stop();
-    });
-    localVideo.srcObject = null;
+  Future<void> hangUp(List<JinroPlayerState> jinroPlayerList, JinroPlayerListNotifier jinroPlayerListNotifier) async {
+    // List<MediaStreamTrack> tracks = jinroPlayerList[0].renderer.srcObject!.getTracks();
+    // tracks.forEach((track) {
+    //   track.stop();
+    // });
+    // jinroPlayerList[0].renderer.srcObject = null;
 
-    if (remoteStream != null) {
-      remoteStream!.getTracks().forEach((track) => track.stop());
-    }
+    // if (remoteStream != null) {
+    //   remoteStream!.getTracks().forEach((track) => track.stop());
+    // }
     if (peerConnection != null) peerConnection!.close();
 
-    if (roomId != null) {
-      var db = FirebaseFirestore.instance;
-      var roomRef = db.collection('rooms').doc(roomId);
-      var calleeCandidates = await roomRef.collection('calleeCandidates').get();
-      calleeCandidates.docs.forEach((document) => document.reference.delete());
-
-      var callerCandidates = await roomRef.collection('callerCandidates').get();
-      callerCandidates.docs.forEach((document) => document.reference.delete());
-
-      await roomRef.delete();
-    }
+    // if (roomId != null) {
+    //   var db = FirebaseFirestore.instance;
+    //   var roomRef = db.collection('rooms').doc(roomId);
+    //   var calleeCandidates = await roomRef.collection('calleeCandidates').get();
+    //   calleeCandidates.docs.forEach((document) => document.reference.delete());
+    //
+    //   var callerCandidates = await roomRef.collection('callerCandidates').get();
+    //   callerCandidates.docs.forEach((document) => document.reference.delete());
+    //
+    //   await roomRef.delete();
+    // }
 
     // localStream!.dispose();
-    remoteStream?.dispose();
+    // remoteStream?.dispose();
   }
 
   void registerPeerConnectionListeners(

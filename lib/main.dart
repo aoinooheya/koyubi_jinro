@@ -220,7 +220,7 @@ class MyHomePage extends HookConsumerWidget {
                   updateIconByLoginWithMediaAccess(jinroPlayerList[0], jinroPlayerListNotifier);
                   Navigator.push(context, MaterialPageRoute(builder: (context) => NextPage()));
                 } catch (e) {
-                  infoTextNotifier.update((state) => "登録に失敗しました");
+                  infoTextNotifier.update((state) => "登録に失敗しました: $e");
                 }
               },
               child: const Text('Googleでログイン')
