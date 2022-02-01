@@ -108,7 +108,7 @@ class MyHomePage extends HookConsumerWidget {
 
     /// Update player icon
     jinroPlayerListNotifier.copyWith(
-      jinroPlayerState: jinroPlayer,
+      playerIdCurrent: jinroPlayer.playerId,
       playerId: FirebaseAuth.instance.currentUser!.uid,
       playerName: playerName,
       thumbnail: thumbnail,
@@ -248,10 +248,13 @@ class MyHomePage extends HookConsumerWidget {
 //   WidgetsFlutterBinding.ensureInitialized();
 //   await Firebase.initializeApp(
 //     options: const FirebaseOptions(
-//         apiKey: "AIzaSyC2NMnW6VHDEBjdr1y7-F-MBLu2iv8kd9E",
-//         appId: "1:420630967339:web:b3f404144679c775b9e66e",
-//         messagingSenderId: "G-LWJ1LB946C",
-//         projectId: "koyubijinro"
+//       apiKey: "AIzaSyC2NMnW6VHDEBjdr1y7-F-MBLu2iv8kd9E",
+//       authDomain: "koyubijinro.firebaseapp.com",
+//       projectId: "koyubijinro",
+//       storageBucket: "koyubijinro.appspot.com",
+//       messagingSenderId: "420630967339",
+//       appId: "1:420630967339:web:b3f404144679c775b9e66e",
+//       measurementId: "G-LWJ1LB946C"
 //     )
 //   );
 //   runApp(const ProviderScope(child: MyApp()));
@@ -279,136 +282,37 @@ class MyHomePage extends HookConsumerWidget {
 //           children: <Widget>[
 //             ElevatedButton(
 //               onPressed: () {
+//                 FirebaseFirestore.instance.collection('rooms').get().then((snapshot) => {
+//                   for (final doc in snapshot.docs) {
+//                     print(doc.id)
+//                   }
+//                 });
+//                 FirebaseFirestore.instance.collection('rooms').snapshots().listen((snapshot){
+//                   snapshot.docChanges.forEach((change) {
+//                     if (change.type == DocumentChangeType.added) {
+//                       Map<String, dynamic> data = change.doc.data() as Map<String, dynamic>;
+//                       print(data);
+//                     }
+//                   });
+//                 });
 //               },
-//               child: Text('')
+//               child: Text('Firestore & listen')
 //             ) ,
+//             ElevatedButton(
+//                 onPressed: () {
+//                   FirebaseFirestore.instance.collection('rooms').doc('deavafa').set({'daaf' : 'faug'});
+//                 },
+//                 child: Text('Make change')
+//             ) ,
+//             ElevatedButton(
+//                 onPressed: () {
+//                   FirebaseFirestore.instance.collection('rooms').doc('defa').set({'daf' : 'fug'});
+//                 },
+//                 child: Text('Make change')
+//             )
 //           ]
 //         )
 //       )
-//     );
-//   }
-// }
-//////////////////////////////////////
-// main Image Uplaod
-// Future<void> main() async {
-//   WidgetsFlutterBinding.ensureInitialized();
-//   await Firebase.initializeApp(
-//     options: const FirebaseOptions(
-//       apiKey: "AIzaSyC2NMnW6VHDEBjdr1y7-F-MBLu2iv8kd9E",
-//       authDomain: "koyubijinro.firebaseapp.com",
-//       projectId: "koyubijinro",
-//       storageBucket: "koyubijinro.appspot.com",
-//       messagingSenderId: "420630967339",
-//       appId: "1:420630967339:web:b3f404144679c775b9e66e",
-//       measurementId: "G-LWJ1LB946C"
-//     )
-//   );
-//
-//   runApp(const MyApp());
-// }
-//
-// class MyApp extends StatelessWidget {
-//   const MyApp({Key? key}) : super(key: key);
-//   @override
-//   Widget build(BuildContext context) {
-//     return MaterialApp(
-//       title: 'Flutter Demo',
-//       theme: ThemeData(
-//         primarySwatch: Colors.blue,
-//         visualDensity: VisualDensity.adaptivePlatformDensity,
-//       ),
-//       home: const MyHomePage(),
-//     );
-//   }
-// }
-//
-// class MyHomePage extends StatefulWidget {
-//   const MyHomePage({Key? key}) : super(key: key);
-//   @override
-//   _MyHomePageState createState() => _MyHomePageState();
-// }
-//
-// class _MyHomePageState extends State<MyHomePage> {
-//   Image? _img;
-//   Text? _text;
-//
-//   Future<void> _download() async {
-//     FirebaseStorage storage = FirebaseStorage.instance;
-//     print('Here0');
-//
-//     // テキスト
-//     // Reference textRef = storage.ref("DL/hello.txt");
-//     // var data = await textRef.getData();
-//     // print('Here1');
-//
-//     // 画像
-//     // Reference imageRef = storage.ref("DL/icon.png");
-//     Reference imageRef = storage.ref("UL/upload-pic.png");
-//     String imageUrl = await imageRef.getDownloadURL();
-//     print('Here2');
-//
-//     // 画面に反映
-//     setState(() {
-//       _img = Image.network(imageUrl);
-//       // _text = Text(ascii.decode(data!));
-//     });
-//     print('Here3');
-//
-//     // Save locally
-//     // Directory appDocDir = await getApplicationDocumentsDirectory();
-//     // File downloadToFile = File("${appDocDir.path}/download-logo.png");
-//     // try {
-//     //   await imageRef.writeToFile(downloadToFile);
-//     // } catch (e) {
-//     //   print(e);
-//     // }
-//   }
-//
-//   void _upload() async {
-//     // imagePickerで画像を選択する
-//     XFile? pickerFile = await ImagePicker().pickImage(source: ImageSource.gallery);
-//     if (pickerFile != null) {
-//       print('Full path = ${pickerFile.path}');
-//       try {
-//         await FirebaseStorage.instance.ref("UL/upload-pic.png").putData(await pickerFile.readAsBytes());
-//       } catch (e) {
-//         print(e);
-//       }
-//     }
-//   }
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       body: Center(
-//         child: Column(
-//           mainAxisAlignment: MainAxisAlignment.center,
-//           children: <Widget>[
-//             if (_text != null) _text!,
-//             if (_img != null) _img!,
-//           ],
-//         ),
-//       ),
-//       floatingActionButton:
-//       Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-//         FloatingActionButton(
-//           onPressed: _download,
-//           child: const Icon(Icons.download_outlined),
-//         ),
-//         FloatingActionButton(
-//           onPressed: _upload,
-//           child: const Icon(Icons.upload_outlined),
-//         ),
-//         FloatingActionButton(
-//           onPressed: () async {
-//             ListResult result = await FirebaseStorage.instance.ref().listAll();
-//             for (var ref in result.prefixes) {
-//               print('list = $ref');
-//             }
-//           },
-//           child: const Icon(Icons.upload),
-//         ),
-//       ])
 //     );
 //   }
 // }

@@ -1,4 +1,5 @@
 import 'package:audioplayers/audioplayers.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
@@ -17,27 +18,27 @@ final jinroPlayerListNotifierProvider =
 class JinroPlayerListNotifier extends StateNotifier<List<JinroPlayerState>>{
   JinroPlayerListNotifier(): super([
     JinroPlayerState(), /// It's you! (id=0)
-    JinroPlayerState(
-      playerId: '1',
-      playerName: 'masyu',
-      thumbnail:  'https://firebasestorage.googleapis.com/v0/b/koyubijinro.appspot.com/o/thumbnail%2Fmasyu.jpg?alt=media&token=ec5458bf-946d-4dce-bbcf-a6586a2c19fa',
-      voice:      'sounds/shake.mp3',
-    ), // masyu (id=1)
-    JinroPlayerState(
-      playerId: '2',
-      playerName: '即死ちゃん',
-      thumbnail:  'https://firebasestorage.googleapis.com/v0/b/koyubijinro.appspot.com/o/thumbnail%2Fsokushichan.jpg?alt=media&token=36fc09b4-8e53-4b8f-a13f-0e8caa5afa2b',
-      voice:      'sounds/onegaishimasusokushichan.mp3',
-    ), // sokushi (id=2)
-    JinroPlayerState(
-      playerId: '3',
-      playerName: '葵',
-      thumbnail:  'https://firebasestorage.googleapis.com/v0/b/koyubijinro.appspot.com/o/thumbnail%2Faoi.jpg?alt=media&token=63b39e1e-a6ae-46c6-8fa3-41678d1a9299',
-      voice:      'sounds/hiiteiku.mp3'
-    ), // aoi (id=3)
+    // JinroPlayerState(
+    //   playerId: '1',
+    //   playerName: 'masyu',
+    //   thumbnail:  'https://firebasestorage.googleapis.com/v0/b/koyubijinro.appspot.com/o/thumbnail%2Fmasyu.jpg?alt=media&token=ec5458bf-946d-4dce-bbcf-a6586a2c19fa',
+    //   voice:      'sounds/shake.mp3',
+    // ), // masyu (id=1)
+    // JinroPlayerState(
+    //   playerId: '2',
+    //   playerName: '即死ちゃん',
+    //   thumbnail:  'https://firebasestorage.googleapis.com/v0/b/koyubijinro.appspot.com/o/thumbnail%2Fsokushichan.jpg?alt=media&token=36fc09b4-8e53-4b8f-a13f-0e8caa5afa2b',
+    //   voice:      'sounds/onegaishimasusokushichan.mp3',
+    // ), // sokushi (id=2)
+    // JinroPlayerState(
+    //   playerId: '3',
+    //   playerName: '葵',
+    //   thumbnail:  'https://firebasestorage.googleapis.com/v0/b/koyubijinro.appspot.com/o/thumbnail%2Faoi.jpg?alt=media&token=63b39e1e-a6ae-46c6-8fa3-41678d1a9299',
+    //   voice:      'sounds/hiiteiku.mp3'
+    // ), // aoi (id=3)
   ]);
 
-  void initialize(JinroPlayerState jinroPlayerState) {
+  void initializePlayer(JinroPlayerState jinroPlayerState) {
     state = [
       for (final jinroPlayer in state)
         if (jinroPlayer.playerId == jinroPlayerState.playerId)
@@ -47,8 +48,16 @@ class JinroPlayerListNotifier extends StateNotifier<List<JinroPlayerState>>{
     ];
   }
 
+  void initializeList(){
+    state = [
+      for (final jinroPlayer in state)
+        if (jinroPlayer.playerId == FirebaseAuth.instance.currentUser!.uid)
+          jinroPlayer
+    ];
+  }
+
   void copyWith({
-    required JinroPlayerState jinroPlayerState,
+    required String playerIdCurrent,
     String? playerId,
     String? playerName,
     String? thumbnail,
@@ -58,33 +67,48 @@ class JinroPlayerListNotifier extends StateNotifier<List<JinroPlayerState>>{
     RTCVideoView? view,
     int? iconIndex,
     bool? isMute,
+    RTCPeerConnection? peerConnection,
   }) async {
-    playerId ??= jinroPlayerState.playerId;
-    playerName ??= jinroPlayerState.playerName;
-    thumbnail ??= jinroPlayerState.thumbnail;
-    voice ??= jinroPlayerState.voice;
-    stream ??= jinroPlayerState.stream;
-    renderer ??= jinroPlayerState.renderer;
-    view ??= jinroPlayerState.view;  /// Used for mirror the view
-    iconIndex ??= jinroPlayerState.iconIndex;
-    isMute ??= jinroPlayerState.isMute;
-    state = [
-      for (final jinroPlayer in state)
-        if (jinroPlayer.playerId == jinroPlayerState.playerId)
-          JinroPlayerState(
-            playerId: playerId,
-            playerName: playerName,
-            thumbnail: thumbnail,
-            voice: voice,
-            stream: stream,
-            renderer: renderer,
-            view: view,
-            iconIndex: iconIndex,
-            isMute: isMute,
-          )
-        else
-          jinroPlayer,
-    ];
+    JinroPlayerState? jinroPlayerState;
+    for (final jinroPlayer in state) {
+      if (jinroPlayer.playerId == playerIdCurrent){
+        jinroPlayerState = jinroPlayer;
+      }
+    }
+    if (jinroPlayerState == null){
+      print('No such playerId');
+    } else {
+      playerId ??= jinroPlayerState.playerId;
+      playerName ??= jinroPlayerState.playerName;
+      thumbnail ??= jinroPlayerState.thumbnail;
+      voice ??= jinroPlayerState.voice;
+      stream ??= jinroPlayerState.stream;
+      renderer ??= jinroPlayerState.renderer;
+      view ??= jinroPlayerState.view;
+
+      /// Used for mirror the view
+      iconIndex ??= jinroPlayerState.iconIndex;
+      isMute ??= jinroPlayerState.isMute;
+      peerConnection ??= jinroPlayerState.peerConnection;
+      state = [
+        for (final jinroPlayer in state)
+          if (jinroPlayer.playerId == jinroPlayerState.playerId)
+            JinroPlayerState(
+              playerId: playerId,
+              playerName: playerName,
+              thumbnail: thumbnail,
+              voice: voice,
+              stream: stream,
+              renderer: renderer,
+              view: view,
+              iconIndex: iconIndex,
+              isMute: isMute,
+              peerConnection: peerConnection,
+            )
+          else
+            jinroPlayer,
+      ];
+    }
   }
 
   void add(JinroPlayerState jinroPlayerState){
@@ -103,6 +127,7 @@ class JinroPlayerState{
     RTCVideoView? view,
     this.iconIndex = 0,   /// iconView = thumbnail
     this.isMute = true,
+    this.peerConnection,
   }){
     renderer == null ? this.renderer.initialize() : this.renderer = renderer;
     if (stream != null) {
@@ -174,6 +199,7 @@ class JinroPlayerState{
   late RTCVideoView view; /// Own video
   int iconIndex;  /// Index for switching icon view (0 is thumbnail, 1 is video)
   bool isMute;
+  RTCPeerConnection? peerConnection;
 
   final _audio = AudioCache();
   late Container playerIcon;

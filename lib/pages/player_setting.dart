@@ -41,7 +41,7 @@ class PlayerSetting extends HookConsumerWidget{
               child: ElevatedButton(
                 onPressed: (){
                   jinroPlayerListNotifier.copyWith(
-                    jinroPlayerState: jinroPlayerList[0], playerName: nameField.text
+                    playerIdCurrent: FirebaseAuth.instance.currentUser!.uid, playerName: nameField.text
                   );
                   /// Update Firestore
                   utilFirebase.updateFirestore(
@@ -71,7 +71,7 @@ class PlayerSetting extends HookConsumerWidget{
                   }
                   /// copyWith
                   String thumbnailUrl = await thumbnailRef.getDownloadURL();
-                  jinroPlayerListNotifier.copyWith(jinroPlayerState: jinroPlayerList[0], thumbnail: thumbnailUrl);
+                  jinroPlayerListNotifier.copyWith(playerIdCurrent: FirebaseAuth.instance.currentUser!.uid, thumbnail: thumbnailUrl);
                   /// Update Firestore
                   utilFirebase.updateFirestore(
                     jinroPlayer: jinroPlayerList[0],

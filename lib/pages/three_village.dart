@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
@@ -27,6 +28,7 @@ class ThreeVillage extends HookConsumerWidget {
           icon: const Icon(Icons.call_end),
           onPressed: (){
             signaling.hangUp(jinroPlayerList, jinroPlayerListNotifier);
+            jinroPlayerListNotifier.initializeList();
             Navigator.pop(context);
           },
         ),
@@ -114,14 +116,14 @@ class ThreeVillage extends HookConsumerWidget {
               if (jinroPlayerList[0].isMute == true){
                 jinroPlayerList[0].stream?.getAudioTracks()[0].enabled = true;
                 jinroPlayerListNotifier.copyWith(
-                    jinroPlayerState: jinroPlayerList[0],
+                    playerIdCurrent: FirebaseAuth.instance.currentUser!.uid,
                     stream: jinroPlayerList[0].stream,
                     isMute: false,
                 );
               } else {  /// isMute == false
                 jinroPlayerList[0].stream?.getAudioTracks()[0].enabled = false;
                 jinroPlayerListNotifier.copyWith(
-                    jinroPlayerState: jinroPlayerList[0],
+                    playerIdCurrent: FirebaseAuth.instance.currentUser!.uid,
                     stream: jinroPlayerList[0].stream,
                     isMute: true,
                 );
@@ -141,7 +143,7 @@ class ThreeVillage extends HookConsumerWidget {
               if (jinroPlayerList[0].iconIndex == iconView.thumbnail.index){
                 jinroPlayerList[0].stream?.getVideoTracks()[0].enabled = true;
                 jinroPlayerListNotifier.copyWith(
-                  jinroPlayerState: jinroPlayerList[0],
+                  playerIdCurrent: FirebaseAuth.instance.currentUser!.uid,
                   stream: jinroPlayerList[0].stream,
                   iconIndex: iconView.video.index
                 );
@@ -149,7 +151,7 @@ class ThreeVillage extends HookConsumerWidget {
               } else if (jinroPlayerList[0].iconIndex == iconView.video.index) {
                 jinroPlayerList[0].stream?.getVideoTracks()[0].enabled = false;
                 jinroPlayerListNotifier.copyWith(
-                  jinroPlayerState: jinroPlayerList[0],
+                  playerIdCurrent: FirebaseAuth.instance.currentUser!.uid,
                   stream: jinroPlayerList[0].stream,
                   iconIndex: iconView.thumbnail.index
                 );
@@ -170,7 +172,7 @@ class ThreeVillage extends HookConsumerWidget {
                     Map<String, dynamic> userData = snapshot.data() as Map<String, dynamic>;
                     int iconIndex = userData['iconIndex'];
                     jinroPlayerListNotifier.copyWith(
-                      jinroPlayerState: jinroPlayer,
+                      playerIdCurrent: jinroPlayer.playerId,
                       iconIndex: iconIndex,
                     );
                 });

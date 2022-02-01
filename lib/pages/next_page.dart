@@ -22,7 +22,7 @@ class NextPage extends HookConsumerWidget{
           icon: const Icon(Icons.logout),
           onPressed: () async {
             await FirebaseAuth.instance.signOut();
-            jinroPlayerListNotifier.initialize(jinroPlayerList[0]);
+            jinroPlayerListNotifier.initializePlayer(jinroPlayerList[0]);
             Navigator.pop(context);
           },
         ),
